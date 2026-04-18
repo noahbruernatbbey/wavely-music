@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      playlist_tracks: {
+        Row: {
+          added_at: string
+          id: string
+          playlist_id: string
+          position: number
+          track_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          playlist_id: string
+          position?: number
+          track_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          playlist_id?: string
+          position?: number
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_tracks_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -49,6 +118,7 @@ export type Database = {
           created_at: string
           duration_seconds: number | null
           id: string
+          is_public: boolean
           title: string
           updated_at: string
           user_id: string
@@ -60,6 +130,7 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           id?: string
+          is_public?: boolean
           title: string
           updated_at?: string
           user_id: string
@@ -71,6 +142,7 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           id?: string
+          is_public?: boolean
           title?: string
           updated_at?: string
           user_id?: string
@@ -82,7 +154,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_playlist_owner: {
+        Args: { _playlist_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_playlist_public: { Args: { _playlist_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

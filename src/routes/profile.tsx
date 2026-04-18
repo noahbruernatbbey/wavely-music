@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { publicUrl } from "@/lib/storage";
 import { toast } from "sonner";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, Camera } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -14,8 +15,11 @@ export const Route = createFileRoute("/profile")({
 function ProfilePage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState("");
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [trackCount, setTrackCount] = useState(0);
 
   useEffect(() => {
@@ -24,8 +28,11 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => setDisplayName(data?.display_name ?? ""));
+    supabase.from("profiles").select("display_name, avatar_url").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => {
+        setDisplayName(data?.display_name ?? "");
+        setAvatarPath(data?.avatar_url ?? null);
+      });
     supabase.from("tracks").select("*", { count: "exact", head: true }).eq("user_id", user.id)
       .then(({ count }) => setTrackCount(count ?? 0));
   }, [user]);
@@ -39,17 +46,56 @@ function ProfilePage() {
     toast.success("Profile saved");
   };
 
+  const onAvatarSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      return toast.error("Please choose a PNG, JPG or WEBP image.");
+    }
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB.");
+    setUploading(true);
+    const ext = file.name.split(".").pop() ?? "png";
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setUploading(false); return toast.error(upErr.message); }
+    // Best-effort: remove the previous one
+    if (avatarPath) await supabase.storage.from("avatars").remove([avatarPath]);
+    const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: path }).eq("user_id", user.id);
+    setUploading(false);
+    if (dbErr) return toast.error(dbErr.message);
+    setAvatarPath(path);
+    toast.success("Avatar updated");
+  };
+
+  const avatarUrl = avatarPath ? publicUrl("avatars", avatarPath) : null;
+
   return (
     <AppShell>
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center gap-5">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-secondary sm:h-32 sm:w-32">
-            <UserIcon className="h-12 w-12 text-muted-foreground sm:h-16 sm:w-16" />
+          <div className="relative">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-secondary sm:h-32 sm:w-32">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <UserIcon className="h-12 w-12 text-muted-foreground sm:h-16 sm:w-16" />
+              )}
+            </div>
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110 disabled:opacity-50"
+              aria-label="Change avatar"
+            >
+              <Camera className="h-4 w-4" />
+            </button>
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={onAvatarSelected} />
           </div>
           <div>
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</div>
             <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-5xl">{displayName || "You"}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{trackCount} {trackCount === 1 ? "song" : "songs"} · {user?.email}</p>
+            {uploading && <p className="mt-1 text-xs text-primary">Uploading avatar…</p>}
           </div>
         </div>
 
@@ -59,9 +105,7 @@ function ProfilePage() {
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Display name</label>
               <input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                maxLength={80}
+                value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={80}
                 className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -70,8 +114,7 @@ function ProfilePage() {
               <input value={user?.email ?? ""} disabled className="w-full rounded-md border border-border bg-input/50 px-3 py-2 text-sm text-muted-foreground" />
             </div>
             <button
-              onClick={save}
-              disabled={busy}
+              onClick={save} disabled={busy}
               className="rounded-full bg-primary px-6 py-2 font-semibold text-primary-foreground transition-transform hover:scale-105 disabled:opacity-50"
             >
               {busy ? "Saving…" : "Save"}
