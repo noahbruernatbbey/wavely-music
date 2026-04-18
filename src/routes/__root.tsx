@@ -30,6 +30,8 @@ export const Route = createRootRoute({
       { name: "twitter:description", content: "Upload, organize and stream your own music collection. A modern, Spotify-inspired audio player." },
       { name: "twitter:card", content: "summary" },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/e96995c4-087c-4c20-b9a1-335057fbc235" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/e96995c4-087c-4c20-b9a1-335057fbc235" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
