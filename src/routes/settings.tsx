@@ -18,8 +18,24 @@ function SettingsPage() {
   const navigate = useNavigate();
   const { volume, setVolume } = usePlayer();
   const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [pwBusy, setPwBusy] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+
+  const deleteAccount = async () => {
+    setDeleteBusy(true);
+    const { error } = await supabase.functions.invoke("delete-account");
+    if (error) {
+      setDeleteBusy(false);
+      return toast.error(error.message ?? "Could not delete account");
+    }
+    await supabase.auth.signOut();
+    setDeleteBusy(false);
+    setConfirmDelete(false);
+    toast.success("Account deleted");
+    navigate({ to: "/auth" });
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -103,11 +119,11 @@ function SettingsPage() {
         {/* Danger zone */}
         <Section title="Danger zone" tone="destructive">
           <div className="text-sm text-muted-foreground">
-            Account deletion isn't available yet. To delete your account, contact support.
+            Permanently delete your account, all uploaded songs, playlists, and avatar. This cannot be undone.
           </div>
           <button
-            disabled
-            className="mt-3 inline-flex items-center gap-2 rounded-full border border-destructive/40 px-5 py-2 text-sm font-medium text-destructive opacity-60"
+            onClick={() => setConfirmDelete(true)}
+            className="mt-3 inline-flex items-center gap-2 rounded-full bg-destructive px-5 py-2 text-sm font-semibold text-destructive-foreground transition-transform hover:scale-105"
           >
             <Trash2 className="h-4 w-4" /> Delete account
           </button>
@@ -134,6 +150,16 @@ function SettingsPage() {
         confirmText="Sign out"
         onConfirm={signOut}
         onCancel={() => setConfirmSignOut(false)}
+      />
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete account?"
+        message="This permanently removes your account, songs, playlists, and avatar. This cannot be undone."
+        confirmText="Delete forever"
+        destructive
+        busy={deleteBusy}
+        onConfirm={deleteAccount}
+        onCancel={() => setConfirmDelete(false)}
       />
     </AppShell>
   );

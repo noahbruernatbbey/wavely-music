@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { publicUrl } from "@/lib/storage";
 import { toast } from "sonner";
-import { User as UserIcon, Camera } from "lucide-react";
+import { User as UserIcon, Camera, X } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -67,6 +67,17 @@ function ProfilePage() {
     toast.success("Avatar updated");
   };
 
+  const resetAvatar = async () => {
+    if (!user || !avatarPath) return;
+    setUploading(true);
+    await supabase.storage.from("avatars").remove([avatarPath]);
+    const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("user_id", user.id);
+    setUploading(false);
+    if (error) return toast.error(error.message);
+    setAvatarPath(null);
+    toast.success("Avatar removed");
+  };
+
   const avatarUrl = avatarPath ? publicUrl("avatars", avatarPath) : null;
 
   return (
@@ -89,6 +100,17 @@ function ProfilePage() {
             >
               <Camera className="h-4 w-4" />
             </button>
+            {avatarPath && (
+              <button
+                onClick={resetAvatar}
+                disabled={uploading}
+                className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-lg transition-transform hover:scale-110 disabled:opacity-50"
+                aria-label="Remove avatar"
+                title="Remove avatar"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
             <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={onAvatarSelected} />
           </div>
           <div>
