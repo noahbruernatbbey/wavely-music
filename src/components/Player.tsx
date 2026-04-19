@@ -1,5 +1,5 @@
 import { usePlayer } from "@/context/PlayerContext";
-import { publicUrl } from "@/lib/storage";
+import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { Play, Pause, SkipBack, SkipForward, Music2, Shuffle, Repeat, Repeat1, ListMusic, Volume2, VolumeX } from "lucide-react";
 
 function fmt(s: number) {
@@ -14,15 +14,16 @@ export function Player() {
     current, isPlaying, progress, duration, volume, shuffle, repeat, repeatCount, queueOpen,
     toggle, next, prev, seek, setVolume, toggleShuffle, cycleRepeat, setRepeatCount, setQueueOpen,
   } = usePlayer();
+  const cover = useSignedUrl("covers", current?.cover_path);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-[var(--player)]/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-screen-2xl items-center gap-3 px-3 py-3 sm:gap-4 sm:px-6">
         {/* Track info */}
         <div className="flex min-w-0 flex-1 items-center gap-3 sm:flex-[0_0_26%]">
-          {current?.cover_path ? (
+          {cover ? (
             <img
-              src={publicUrl("covers", current.cover_path) ?? ""}
+              src={cover}
               alt=""
               className="h-12 w-12 flex-shrink-0 rounded-md object-cover shadow-lg sm:h-14 sm:w-14"
             />

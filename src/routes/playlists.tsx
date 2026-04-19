@@ -8,8 +8,8 @@ import { usePlayer } from "@/context/PlayerContext";
 import type { Tables } from "@/integrations/supabase/types";
 import type { Track } from "@/context/PlayerContext";
 import { toast } from "sonner";
-import { ListMusic, Plus, Trash2, Play, Music2, X, Globe, Lock } from "lucide-react";
-import { publicUrl } from "@/lib/storage";
+import { ListMusic, Plus, Trash2, Play, X, Globe, Lock } from "lucide-react";
+import { CoverThumb } from "@/components/CoverThumb";
 
 type Playlist = Tables<"playlists">;
 type PlaylistTrack = Tables<"playlist_tracks">;
@@ -188,24 +188,21 @@ function PlaylistsPage() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
-                    {activeTracks.map((t, i) => {
-                      const cover = publicUrl("covers", t.cover_path);
-                      return (
-                        <div key={t.id} className="group flex items-center gap-3 py-2">
-                          <div className="w-6 text-center text-xs text-muted-foreground">{i + 1}</div>
-                          <button onClick={() => play(t, activeTracks)} className="h-10 w-10 overflow-hidden rounded">
-                            {cover ? <img src={cover} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center bg-muted"><Music2 className="h-4 w-4 text-muted-foreground" /></div>}
-                          </button>
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium">{t.title}</div>
-                            <div className="truncate text-xs text-muted-foreground">{t.artist}</div>
-                          </div>
-                          <button onClick={() => removeTrack(t)} className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100" aria-label="Remove">
-                            <X className="h-4 w-4" />
-                          </button>
+                    {activeTracks.map((t, i) => (
+                      <div key={t.id} className="group flex items-center gap-3 py-2">
+                        <div className="w-6 text-center text-xs text-muted-foreground">{i + 1}</div>
+                        <button onClick={() => play(t, activeTracks)} className="h-10 w-10 overflow-hidden rounded">
+                          <CoverThumb path={t.cover_path} />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{t.title}</div>
+                          <div className="truncate text-xs text-muted-foreground">{t.artist}</div>
                         </div>
-                      );
-                    })}
+                        <button onClick={() => removeTrack(t)} className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100" aria-label="Remove">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </>

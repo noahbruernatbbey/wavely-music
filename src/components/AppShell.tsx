@@ -1,23 +1,24 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Player } from "./Player";
 import { QueuePanel } from "./QueuePanel";
-import { Library, Upload, User, LogOut, Music2, Home, ListMusic, Settings } from "lucide-react";
+import { Library, Upload, User, LogOut, Music2, Home, ListMusic, Settings, PanelLeftClose, PanelLeft } from "lucide-react";
 
-function NavLink({ to, icon: Icon, children }: { to: string; icon: typeof Home; children: ReactNode }) {
+function NavLink({ to, icon: Icon, children, collapsed }: { to: string; icon: typeof Home; children: ReactNode; collapsed: boolean }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const active = path === to;
   return (
     <Link
       to={to}
+      title={collapsed ? String(children) : undefined}
       className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
         active ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"
-      }`}
+      } ${collapsed ? "justify-center" : ""}`}
     >
-      <Icon className="h-5 w-5" />
-      <span>{children}</span>
+      <Icon className="h-5 w-5 flex-shrink-0" />
+      {!collapsed && <span>{children}</span>}
     </Link>
   );
 }
@@ -25,6 +26,16 @@ function NavLink({ to, icon: Icon, children }: { to: string; icon: typeof Home; 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("sidebar-collapsed") === "1";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sidebar-collapsed", collapsed ? "1" : "0");
+    }
+  }, [collapsed]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -39,29 +50,48 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
+  const sidebarWidth = collapsed ? "w-16" : "w-60";
+  const mainPad = collapsed ? "md:pl-16" : "md:pl-60";
+
   return (
     <div className="min-h-screen pb-28 sm:pb-24">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col gap-1 bg-sidebar p-4 md:flex">
-        <Link to="/" className="mb-4 flex items-center gap-2 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-            <Music2 className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">Wavely</span>
-        </Link>
-        <NavLink to="/" icon={Home}>Home</NavLink>
-        <NavLink to="/library" icon={Library}>My Library</NavLink>
-        <NavLink to="/playlists" icon={ListMusic}>Playlists</NavLink>
-        <NavLink to="/upload" icon={Upload}>Upload</NavLink>
-        <NavLink to="/profile" icon={User}>Profile</NavLink>
-        <NavLink to="/settings" icon={Settings}>Settings</NavLink>
+      <aside className={`fixed inset-y-0 left-0 z-40 hidden flex-col gap-1 bg-sidebar p-4 transition-[width] duration-200 md:flex ${sidebarWidth}`}>
+        <div className={`mb-2 flex items-center ${collapsed ? "justify-center" : "justify-between"}`}>
+          {!collapsed && (
+            <Link to="/" className="flex items-center gap-2 px-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+                <Music2 className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-bold tracking-tight">Wavely</span>
+            </Link>
+          )}
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand" : "Collapse"}
+          >
+            {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+        </div>
+        <NavLink to="/" icon={Home} collapsed={collapsed}>Home</NavLink>
+        <NavLink to="/library" icon={Library} collapsed={collapsed}>My Library</NavLink>
+        <NavLink to="/playlists" icon={ListMusic} collapsed={collapsed}>Playlists</NavLink>
+        <NavLink to="/upload" icon={Upload} collapsed={collapsed}>Upload</NavLink>
+        <NavLink to="/profile" icon={User} collapsed={collapsed}>Profile</NavLink>
+        <NavLink to="/settings" icon={Settings} collapsed={collapsed}>Settings</NavLink>
         <div className="mt-auto">
           {user ? (
-            <button onClick={signOut} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-              <LogOut className="h-5 w-5" /> Sign out
+            <button
+              onClick={signOut}
+              title={collapsed ? "Sign out" : undefined}
+              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground ${collapsed ? "justify-center" : ""}`}
+            >
+              <LogOut className="h-5 w-5" /> {!collapsed && "Sign out"}
             </button>
           ) : (
-            <Link to="/auth" className="flex items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
-              Sign in
+            <Link to="/auth" className={`flex items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground ${collapsed ? "justify-center" : ""}`}>
+              {collapsed ? <User className="h-4 w-4" /> : "Sign in"}
             </Link>
           )}
         </div>
@@ -83,7 +113,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </header>
 
-      <main className="md:pl-60">
+      <main className={`transition-[padding] duration-200 ${mainPad}`}>
         <div className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-8 sm:py-8">{children}</div>
       </main>
 

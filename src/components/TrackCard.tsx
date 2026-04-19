@@ -1,4 +1,4 @@
-import { publicUrl } from "@/lib/storage";
+import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { usePlayer, type Track } from "@/context/PlayerContext";
 import { Play, Pause, Music2, Pencil, Trash2 } from "lucide-react";
 
@@ -16,7 +16,7 @@ export function TrackCard({
   const { current, isPlaying, play, toggle } = usePlayer();
   const active = current?.id === track.id;
   const playing = active && isPlaying;
-  const cover = publicUrl("covers", track.cover_path);
+  const cover = useSignedUrl("covers", track.cover_path);
 
   return (
     <div className="group relative flex flex-col gap-3 rounded-lg bg-card p-3 transition-all hover:bg-elevated">

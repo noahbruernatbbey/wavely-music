@@ -86,6 +86,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -94,6 +95,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -102,6 +104,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -159,6 +162,10 @@ export type Database = {
         Returns: boolean
       }
       is_playlist_public: { Args: { _playlist_id: string }; Returns: boolean }
+      is_track_file_public: {
+        Args: { _bucket: string; _path: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

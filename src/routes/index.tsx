@@ -5,7 +5,10 @@ import { TrackCard } from "@/components/TrackCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Track } from "@/context/PlayerContext";
-import { Music2, Upload as UploadIcon, Search, Globe } from "lucide-react";
+import type { Tables } from "@/integrations/supabase/types";
+import { Music2, Upload as UploadIcon, Search, Globe, ListMusic, Plus } from "lucide-react";
+
+type Playlist = Tables<"playlists">;
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -15,6 +18,7 @@ function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [mine, setMine] = useState<Track[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [publicResults, setPublicResults] = useState<Track[]>([]);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -27,6 +31,8 @@ function Index() {
     if (!user) return;
     supabase.from("tracks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8)
       .then(({ data }) => setMine(data ?? []));
+    supabase.from("playlists").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8)
+      .then(({ data }) => setPlaylists(data ?? []));
   }, [user]);
 
   // Public search debounce
@@ -106,6 +112,42 @@ function Index() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {mine.map((t) => <TrackCard key={t.id} track={t} queue={mine} />)}
           </div>
+
+          <section className="mt-10">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Your playlists</h2>
+              <Link to="/playlists" className="text-sm font-semibold text-muted-foreground hover:text-foreground">Show all</Link>
+            </div>
+            {playlists.length === 0 ? (
+              <Link
+                to="/playlists"
+                className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-card/40 px-5 py-6 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary">
+                  <Plus className="h-5 w-5" />
+                </div>
+                Create your first playlist to organize your songs.
+              </Link>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {playlists.map((pl) => (
+                  <Link
+                    key={pl.id}
+                    to="/playlists"
+                    className="group flex flex-col gap-3 rounded-lg bg-card p-3 transition-all hover:bg-elevated"
+                  >
+                    <div className="flex aspect-square items-center justify-center rounded-md bg-gradient-to-br from-primary/40 via-primary/20 to-secondary shadow-md">
+                      <ListMusic className="h-12 w-12 text-primary-foreground/90" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">{pl.name}</div>
+                      <div className="truncate text-sm text-muted-foreground">{pl.is_public ? "Public" : "Private"} playlist</div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
         </>
       )}
     </AppShell>
