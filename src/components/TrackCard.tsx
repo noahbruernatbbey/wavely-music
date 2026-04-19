@@ -1,6 +1,8 @@
 import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { usePlayer, type Track } from "@/context/PlayerContext";
-import { Play, Pause, Music2, Pencil, Trash2 } from "lucide-react";
+import { useLikedIds } from "@/hooks/useLikes";
+import { useAuth } from "@/hooks/useAuth";
+import { Play, Pause, Music2, Pencil, Trash2, Heart } from "lucide-react";
 
 export function TrackCard({
   track,
@@ -14,9 +16,12 @@ export function TrackCard({
   onDelete?: (t: Track) => void;
 }) {
   const { current, isPlaying, play, toggle } = usePlayer();
+  const { user } = useAuth();
+  const { ids, toggle: toggleLike } = useLikedIds();
   const active = current?.id === track.id;
   const playing = active && isPlaying;
   const cover = useSignedUrl("covers", track.cover_path);
+  const liked = ids.has(track.id);
 
   return (
     <div className="group relative flex flex-col gap-3 rounded-lg bg-card p-3 transition-all hover:bg-elevated">
@@ -27,6 +32,16 @@ export function TrackCard({
           <div className="flex h-full w-full items-center justify-center">
             <Music2 className="h-12 w-12 text-muted-foreground" />
           </div>
+        )}
+        {user && (
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleLike(track.id); }}
+            className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/70 backdrop-blur transition-all hover:scale-110"
+            aria-label={liked ? "Unlike" : "Like"}
+            title={liked ? "Remove from Liked Songs" : "Add to Liked Songs"}
+          >
+            <Heart className={`h-4 w-4 ${liked ? "text-primary" : "text-foreground"}`} fill={liked ? "currentColor" : "none"} />
+          </button>
         )}
         <button
           onClick={() => (active ? toggle() : play(track, queue))}
