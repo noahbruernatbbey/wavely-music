@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Tables } from "@/integrations/supabase/types";
-import { publicUrl } from "@/lib/storage";
+import { signedUrl } from "@/lib/storage";
 
 export type Track = Tables<"tracks">;
 export type RepeatMode = "off" | "all" | "one";
@@ -19,7 +19,7 @@ interface PlayerCtx {
   /** Times the current song has already auto-replayed in "one" mode. */
   repeatPlayed: number;
   queueOpen: boolean;
-  play: (track: Track, queue?: Track[]) => void;
+  play: (track: Track, queue?: Track[]) => void | Promise<void>;
   toggle: () => void;
   next: () => void;
   prev: () => void;
@@ -52,12 +52,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef({ current, queue, shuffle, repeat, repeatCount, repeatPlayed });
   stateRef.current = { current, queue, shuffle, repeat, repeatCount, repeatPlayed };
 
-  const play = useCallback((track: Track, q?: Track[]) => {
+  const play = useCallback(async (track: Track, q?: Track[]) => {
     const el = audioRef.current;
     if (!el) return;
-    const url = publicUrl("audio", track.audio_path);
-    if (!url) return;
     if (stateRef.current.current?.id !== track.id) {
+      const url = await signedUrl("audio", track.audio_path);
+      if (!url) return;
       el.src = url;
       setCurrent(track);
       setProgress(0);
