@@ -85,9 +85,18 @@ function Index() {
               No public songs match. Try a different query.
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {publicResults.map((t) => <TrackCard key={t.id} track={t} queue={publicResults} />)}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {publicResults.map((t) => <TrackCard key={t.id} track={t} queue={publicResults} />)}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {Array.from(new Map(publicResults.map((t) => [t.user_id, t.artist])).entries()).map(([uid, artist]) => (
+                  <Link key={uid} to="/u/$userId" params={{ userId: uid }} className="rounded-full bg-card px-4 py-1.5 text-xs font-semibold hover:bg-elevated">
+                    Visit {artist} →
+                  </Link>
+                ))}
+              </div>
+            </>
           )}
         </section>
       ) : mine.length === 0 ? (
