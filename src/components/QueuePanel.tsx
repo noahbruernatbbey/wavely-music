@@ -1,6 +1,6 @@
 import { usePlayer } from "@/context/PlayerContext";
-import { publicUrl } from "@/lib/storage";
-import { X, Music2, Play, Pause, Trash2 } from "lucide-react";
+import { CoverThumb } from "./CoverThumb";
+import { X, Play, Pause, Trash2 } from "lucide-react";
 
 export function QueuePanel() {
   const { queueOpen, setQueueOpen, queue, current, isPlaying, play, toggle, removeFromQueue } = usePlayer();
@@ -24,7 +24,6 @@ export function QueuePanel() {
           ) : (
             queue.map((t) => {
               const active = current?.id === t.id;
-              const cover = publicUrl("covers", t.cover_path);
               return (
                 <div
                   key={t.id}
@@ -34,11 +33,7 @@ export function QueuePanel() {
                     onClick={() => (active ? toggle() : play(t, queue))}
                     className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded"
                   >
-                    {cover ? (
-                      <img src={cover} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-muted"><Music2 className="h-4 w-4 text-muted-foreground" /></div>
-                    )}
+                    <CoverThumb path={t.cover_path} />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                       {active && isPlaying ? <Pause className="h-4 w-4 text-white" fill="white" /> : <Play className="h-4 w-4 text-white" fill="white" />}
                     </div>
