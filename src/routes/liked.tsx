@@ -38,8 +38,8 @@ function LikedPage() {
   return (
     <AppShell>
       <section className="mb-8 flex items-end gap-6">
-        <div className="flex h-40 w-40 items-center justify-center rounded-md bg-gradient-to-br from-pink-500/80 via-rose-500/60 to-primary/40 shadow-xl">
-          <Heart className="h-16 w-16 text-white" fill="currentColor" />
+        <div className="flex h-40 w-40 items-center justify-center rounded-md bg-gradient-to-br from-primary via-primary/60 to-secondary shadow-xl">
+          <Heart className="h-16 w-16 text-primary-foreground" fill="currentColor" />
         </div>
         <div>
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Collection</div>
