@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Player } from "./Player";
 import { QueuePanel } from "./QueuePanel";
-import { Library, Upload, User, LogOut, Music2, Home, ListMusic, Settings, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Library, Upload, User, LogOut, Music2, Home, ListMusic, Settings, PanelLeftClose, PanelLeft, Heart } from "lucide-react";
 
 function NavLink({ to, icon: Icon, children, collapsed }: { to: string; icon: typeof Home; children: ReactNode; collapsed: boolean }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -76,6 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <NavLink to="/" icon={Home} collapsed={collapsed}>Home</NavLink>
         <NavLink to="/library" icon={Library} collapsed={collapsed}>My Library</NavLink>
+        <NavLink to="/liked" icon={Heart} collapsed={collapsed}>Liked Songs</NavLink>
         <NavLink to="/playlists" icon={ListMusic} collapsed={collapsed}>Playlists</NavLink>
         <NavLink to="/upload" icon={Upload} collapsed={collapsed}>Upload</NavLink>
         <NavLink to="/profile" icon={User} collapsed={collapsed}>Profile</NavLink>
