@@ -119,6 +119,7 @@ function ProfilePage() {
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</div>
             <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-5xl">{displayName || "You"}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{trackCount} {trackCount === 1 ? "song" : "songs"} · {user?.email}</p>
+            {bio && <p className="mt-3 max-w-md whitespace-pre-line text-sm text-foreground/90">{bio}</p>}
             {uploading && <p className="mt-1 text-xs text-primary">Uploading avatar…</p>}
           </div>
         </div>
