@@ -17,6 +17,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -28,10 +29,11 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("display_name, avatar_url").eq("user_id", user.id).maybeSingle()
+    supabase.from("profiles").select("display_name, avatar_url, bio").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => {
         setDisplayName(data?.display_name ?? "");
         setAvatarPath(data?.avatar_url ?? null);
+        setBio((data as { bio?: string | null } | null)?.bio ?? "");
       });
     supabase.from("tracks").select("*", { count: "exact", head: true }).eq("user_id", user.id)
       .then(({ count }) => setTrackCount(count ?? 0));
@@ -40,7 +42,7 @@ function ProfilePage() {
   const save = async () => {
     if (!user) return;
     setBusy(true);
-    const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("user_id", user.id);
+    const { error } = await supabase.from("profiles").update({ display_name: displayName, bio } as never).eq("user_id", user.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Profile saved");
@@ -130,6 +132,15 @@ function ProfilePage() {
                 value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={80}
                 className="w-full rounded-md border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
               />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bio</label>
+              <textarea
+                value={bio} onChange={(e) => setBio(e.target.value)} maxLength={500} rows={4}
+                placeholder="Tell people a little about yourself…"
+                className="w-full resize-none rounded-md border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="mt-1 text-right text-[11px] text-muted-foreground">{bio.length}/500</div>
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</label>
