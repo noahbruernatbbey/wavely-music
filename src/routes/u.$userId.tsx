@@ -20,6 +20,7 @@ function ArtistPage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [playCounts, setPlayCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
@@ -38,10 +39,21 @@ function ArtistPage() {
       user ? supabase.from("follows").select("id").eq("follower_id", user.id).eq("following_id", userId).maybeSingle() : Promise.resolve({ data: null }),
     ]);
     setProfile(p ?? null);
-    setTracks(t ?? []);
+    const trackList = t ?? [];
+    setTracks(trackList);
     setFollowers(fc ?? 0);
     setFollowing(fwc ?? 0);
     setIsFollowing(!!(followRow as any)?.data);
+
+    if (trackList.length > 0) {
+      const ids = trackList.map((x) => x.id);
+      const { data: pc } = await supabase.from("play_counts" as never).select("track_id, count").in("track_id", ids);
+      const map: Record<string, number> = {};
+      ((pc as any[]) ?? []).forEach((r) => { map[r.track_id] = Number(r.count) || 0; });
+      setPlayCounts(map);
+    } else {
+      setPlayCounts({});
+    }
     setLoading(false);
   }, [userId, user]);
 
@@ -114,6 +126,32 @@ function ArtistPage() {
           )}
         </div>
       </section>
+
+      {!loading && tracks.length > 0 && (
+        <section className="mb-10">
+          <h2 className="mb-3 text-xl font-bold">Top tracks</h2>
+          <ol className="overflow-hidden rounded-xl border border-border bg-card/40">
+            {[...tracks]
+              .sort((a, b) => (playCounts[b.id] ?? 0) - (playCounts[a.id] ?? 0))
+              .slice(0, 5)
+              .map((t, i) => {
+                const plays = playCounts[t.id] ?? 0;
+                return (
+                  <li key={t.id} className="flex items-center gap-4 border-b border-border px-4 py-2 last:border-b-0 hover:bg-elevated/40">
+                    <span className="w-5 text-right text-sm tabular-nums text-muted-foreground">{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{t.title}</div>
+                      <div className="truncate text-xs text-muted-foreground">{t.artist}</div>
+                    </div>
+                    <span className="hidden text-xs tabular-nums text-muted-foreground sm:inline">
+                      {plays.toLocaleString()} {plays === 1 ? "play" : "plays"}
+                    </span>
+                  </li>
+                );
+              })}
+          </ol>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-xl font-bold">Public songs</h2>
