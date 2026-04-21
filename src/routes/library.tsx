@@ -28,10 +28,21 @@ function LibraryPage() {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [loading, user, navigate]);
 
-  const refresh = () => {
+  const [plays, setPlays] = useState<Record<string, number>>({});
+
+  const refresh = async () => {
     if (!user) return;
-    supabase.from("tracks").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
-      .then(({ data }) => setTracks(data ?? []));
+    const { data } = await supabase.from("tracks").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+    const list = data ?? [];
+    setTracks(list);
+    if (list.length) {
+      const { data: pc } = await supabase.from("play_counts").select("track_id, count").in("track_id", list.map((t) => t.id));
+      const map: Record<string, number> = {};
+      (pc ?? []).forEach((r: { track_id: string; count: number }) => { map[r.track_id] = Number(r.count); });
+      setPlays(map);
+    } else {
+      setPlays({});
+    }
   };
 
   useEffect(() => { if (user) refresh(); }, [user]);
