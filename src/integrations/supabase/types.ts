@@ -64,6 +64,24 @@ export type Database = {
           },
         ]
       }
+      play_counts: {
+        Row: {
+          count: number
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          count?: number
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          count?: number
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       playlist_tracks: {
         Row: {
           added_at: string
@@ -207,6 +225,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_play_count: { Args: { _track_id: string }; Returns: undefined }
       is_playlist_owner: {
         Args: { _playlist_id: string; _user_id: string }
         Returns: boolean
