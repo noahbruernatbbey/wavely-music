@@ -2,18 +2,20 @@ import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { usePlayer, type Track } from "@/context/PlayerContext";
 import { useLikedIds } from "@/hooks/useLikes";
 import { useAuth } from "@/hooks/useAuth";
-import { Play, Pause, Music2, Pencil, Trash2, Heart } from "lucide-react";
+import { Play, Pause, Music2, Pencil, Trash2, Heart, Headphones } from "lucide-react";
 
 export function TrackCard({
   track,
   queue,
   onEdit,
   onDelete,
+  playCount,
 }: {
   track: Track;
   queue: Track[];
   onEdit?: (t: Track) => void;
   onDelete?: (t: Track) => void;
+  playCount?: number;
 }) {
   const { current, isPlaying, play, toggle } = usePlayer();
   const { user } = useAuth();
@@ -55,6 +57,12 @@ export function TrackCard({
       <div className="min-w-0">
         <div className="truncate font-semibold">{track.title}</div>
         <div className="truncate text-sm text-muted-foreground">{track.artist}</div>
+        {typeof playCount === "number" && (
+          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            <Headphones className="h-3 w-3" />
+            {playCount.toLocaleString()} {playCount === 1 ? "play" : "plays"}
+          </div>
+        )}
       </div>
       {(onEdit || onDelete) && (
         <div className="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
