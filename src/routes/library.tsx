@@ -19,7 +19,7 @@ function LibraryPage() {
   const navigate = useNavigate();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<"recent" | "title" | "artist">("recent");
+  const [sort, setSort] = useState<"recent" | "plays" | "title" | "artist">("recent");
   const [editing, setEditing] = useState<Track | null>(null);
   const [deleting, setDeleting] = useState<Track | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -55,6 +55,7 @@ function LibraryPage() {
     .sort((a, b) => {
       if (sort === "title") return a.title.localeCompare(b.title);
       if (sort === "artist") return a.artist.localeCompare(b.artist);
+      if (sort === "plays") return (plays[b.id] ?? 0) - (plays[a.id] ?? 0);
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
@@ -93,9 +94,10 @@ function LibraryPage() {
             value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}
             className="rounded-full border border-border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="recent">Recently added</option>
-            <option value="title">Title</option>
-            <option value="artist">Artist</option>
+            <option value="recent">Newest uploads</option>
+            <option value="plays">Most played</option>
+            <option value="title">Title (A–Z)</option>
+            <option value="artist">Artist (A–Z)</option>
           </select>
         </div>
       </div>
