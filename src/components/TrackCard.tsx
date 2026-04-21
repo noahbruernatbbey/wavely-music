@@ -2,18 +2,20 @@ import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { usePlayer, type Track } from "@/context/PlayerContext";
 import { useLikedIds } from "@/hooks/useLikes";
 import { useAuth } from "@/hooks/useAuth";
-import { Play, Pause, Music2, Pencil, Trash2, Heart } from "lucide-react";
+import { Play, Pause, Music2, Pencil, Trash2, Heart, Headphones } from "lucide-react";
 
 export function TrackCard({
   track,
   queue,
   onEdit,
   onDelete,
+  playCount,
 }: {
   track: Track;
   queue: Track[];
   onEdit?: (t: Track) => void;
   onDelete?: (t: Track) => void;
+  playCount?: number;
 }) {
   const { current, isPlaying, play, toggle } = usePlayer();
   const { user } = useAuth();
