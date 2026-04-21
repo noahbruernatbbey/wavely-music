@@ -111,6 +111,7 @@ function LibraryPage() {
               key={t.id}
               track={t}
               queue={filtered}
+              playCount={plays[t.id] ?? 0}
               onEdit={canManage(t) ? setEditing : undefined}
               onDelete={canManage(t) ? setDeleting : undefined}
             />
