@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Tables } from "@/integrations/supabase/types";
 import { signedUrl } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Track = Tables<"tracks">;
 export type RepeatMode = "off" | "all" | "one";
@@ -91,6 +92,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const onMeta = () => setDuration(el.duration || 0);
     const onEnd = () => {
       const { repeat: r, repeatCount: rc, repeatPlayed: rp, queue: q, current: cur } = stateRef.current;
+      // Increment play count when a track finishes (fire-and-forget)
+      if (cur) {
+        supabase.rpc("increment_play_count" as never, { _track_id: cur.id } as never).then(() => {});
+      }
       // Repeat one mode
       if (r === "one") {
         // 0 = infinite; otherwise repeat rc times then stop or advance
