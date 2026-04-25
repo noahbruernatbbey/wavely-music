@@ -112,8 +112,26 @@ function UploadPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Upload a song</h1>
-        <p className="mt-1 text-muted-foreground">Add an MP3 with cover art to your library.</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Upload a song</h1>
+            <p className="mt-1 text-muted-foreground">Add an MP3 with cover art to your library.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setJamendoOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
+          >
+            <Sparkles className="h-4 w-4" />
+            Import from Jamendo
+          </button>
+        </div>
+
+        <JamendoImportDialog
+          open={jamendoOpen}
+          onClose={() => setJamendoOpen(false)}
+          onImported={() => navigate({ to: "/library" })}
+        />
 
         <form onSubmit={submit} className="mt-8 space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
