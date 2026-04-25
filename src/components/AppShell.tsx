@@ -75,6 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
         <NavLink to="/" icon={Home} collapsed={collapsed}>Home</NavLink>
+        <NavLink to="/discover" icon={Compass} collapsed={collapsed}>Discover</NavLink>
         <NavLink to="/library" icon={Library} collapsed={collapsed}>My Library</NavLink>
         <NavLink to="/liked" icon={Heart} collapsed={collapsed}>Liked Songs</NavLink>
         <NavLink to="/playlists" icon={ListMusic} collapsed={collapsed}>Playlists</NavLink>
