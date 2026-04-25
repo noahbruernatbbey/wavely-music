@@ -65,9 +65,9 @@ export const searchJamendo = createServerFn({ method: "POST" })
   });
 
 export const importJamendoTrack = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
+      accessToken: z.string().min(10),
       jamendoId: z.string().min(1).max(40),
       title: z.string().min(1).max(150),
       artist: z.string().min(1).max(150),
@@ -76,8 +76,8 @@ export const importJamendoTrack = createServerFn({ method: "POST" })
       durationSeconds: z.number().min(0).max(36000).optional().nullable(),
     }).parse,
   )
-  .handler(async ({ data, context }) => {
-    const { userId } = context;
+  .handler(async ({ data }) => {
+    const userId = await verifyAccessToken(data.accessToken);
     const ts = Date.now();
 
     // Fetch audio
