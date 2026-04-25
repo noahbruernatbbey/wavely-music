@@ -1,12 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AppShell } from "@/components/AppShell";
 import { TrackCard } from "@/components/TrackCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Track } from "@/context/PlayerContext";
 import type { Tables } from "@/integrations/supabase/types";
-import { Music2, Upload as UploadIcon, Search, Globe, ListMusic, Plus } from "lucide-react";
+import { Music2, Upload as UploadIcon, Search, Globe, ListMusic, Plus, Sparkles, Download, Loader2 } from "lucide-react";
+import { searchJamendo, importJamendoTrack, type JamendoTrack } from "@/server/jamendo.functions";
+import { toast } from "sonner";
 
 type Playlist = Tables<"playlists">;
 
