@@ -108,31 +108,70 @@ function Index() {
       </section>
 
       {showSearch ? (
-        <section>
-          <div className="mb-3 flex items-center gap-2">
-            <Globe className="h-4 w-4 text-primary" />
-            <h2 className="text-xl font-bold">Public results for "{query}"</h2>
-          </div>
-          {searching && publicResults.length === 0 ? (
-            <div className="text-sm text-muted-foreground">Searching…</div>
-          ) : publicResults.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border bg-card/40 p-8 text-center text-sm text-muted-foreground">
-              No public songs match. Try a different query.
+        <section className="space-y-10">
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <Globe className="h-4 w-4 text-primary" />
+              <h2 className="text-xl font-bold">Public results for "{query}"</h2>
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                {publicResults.map((t) => <TrackCard key={t.id} track={t} queue={publicResults} />)}
+            {searching && publicResults.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Searching…</div>
+            ) : publicResults.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
+                No public songs match. Try Jamendo below ↓
               </div>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {Array.from(new Map(publicResults.map((t) => [t.user_id, t.artist])).entries()).map(([uid, artist]) => (
-                  <Link key={uid} to="/u/$userId" params={{ userId: uid }} className="rounded-full bg-card px-4 py-1.5 text-xs font-semibold hover:bg-elevated">
-                    Visit {artist} →
-                  </Link>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                  {publicResults.map((t) => <TrackCard key={t.id} track={t} queue={publicResults} />)}
+                </div>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {Array.from(new Map(publicResults.map((t) => [t.user_id, t.artist])).entries()).map(([uid, artist]) => (
+                    <Link key={uid} to="/u/$userId" params={{ userId: uid }} className="rounded-full bg-card px-4 py-1.5 text-xs font-semibold hover:bg-elevated">
+                      Visit {artist} →
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h2 className="text-xl font-bold">From Jamendo</h2>
+              <span className="text-xs text-muted-foreground">· free, CC-licensed — import to your library</span>
+            </div>
+            {jamendoSearching && jamendoResults.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Searching Jamendo…</div>
+            ) : jamendoResults.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-card/40 p-6 text-center text-sm text-muted-foreground">
+                No Jamendo tracks for "{query}".
+              </div>
+            ) : (
+              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+                {jamendoResults.map((t) => (
+                  <li key={t.id} className="flex items-center gap-3 p-3 hover:bg-elevated">
+                    <img src={t.image} alt="" loading="lazy" className="h-12 w-12 flex-shrink-0 rounded object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold">{t.name}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {t.artist_name} · {Math.floor(t.duration / 60)}:{String(t.duration % 60).padStart(2, "0")}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleImport(t)}
+                      disabled={importingId !== null}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                    >
+                      {importingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                      Import
+                    </button>
+                  </li>
                 ))}
-              </div>
-            </>
-          )}
+              </ul>
+            )}
+          </div>
         </section>
       ) : mine.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/40 px-6 py-16 text-center">
