@@ -4,7 +4,8 @@ import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { UploadCloud, Music2, Image as ImageIcon, X } from "lucide-react";
+import { UploadCloud, Music2, Image as ImageIcon, X, Sparkles } from "lucide-react";
+import { JamendoImportDialog } from "@/components/JamendoImportDialog";
 
 export const Route = createFileRoute("/upload")({
   component: UploadPage,
