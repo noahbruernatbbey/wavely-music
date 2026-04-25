@@ -1,7 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { Database } from "@/integrations/supabase/types";
+
+async function verifyAccessToken(accessToken: string): Promise<string> {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("Server auth not configured");
+  const client = createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await client.auth.getUser(accessToken);
+  if (error || !data.user) throw new Error("Unauthorized: please sign in again");
+  return data.user.id;
+}
 
 const JAMENDO_BASE = "https://api.jamendo.com/v3.0";
 
@@ -52,9 +65,9 @@ export const searchJamendo = createServerFn({ method: "POST" })
   });
 
 export const importJamendoTrack = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
+      accessToken: z.string().min(10),
       jamendoId: z.string().min(1).max(40),
       title: z.string().min(1).max(150),
       artist: z.string().min(1).max(150),
@@ -63,8 +76,8 @@ export const importJamendoTrack = createServerFn({ method: "POST" })
       durationSeconds: z.number().min(0).max(36000).optional().nullable(),
     }).parse,
   )
-  .handler(async ({ data, context }) => {
-    const { userId } = context;
+  .handler(async ({ data }) => {
+    const userId = await verifyAccessToken(data.accessToken);
     const ts = Date.now();
 
     // Fetch audio

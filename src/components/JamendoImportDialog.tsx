@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { searchJamendo, importJamendoTrack, type JamendoTrack } from "@/server/jamendo.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Search, Loader2, Music2, X, Download } from "lucide-react";
 
@@ -43,8 +44,12 @@ export function JamendoImportDialog({ open, onClose, onImported }: Props) {
   const doImport = async (t: JamendoTrack) => {
     setImportingId(t.id);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("Please sign in to import");
       await importTrack({
         data: {
+          accessToken,
           jamendoId: t.id,
           title: t.name,
           artist: t.artist_name,

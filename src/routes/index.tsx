@@ -71,8 +71,12 @@ function Index() {
   const handleImport = async (t: JamendoTrack) => {
     setImportingId(t.id);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("Please sign in to import");
       await importJamendoFn({
         data: {
+          accessToken,
           jamendoId: t.id,
           title: t.name,
           artist: t.artist_name,
