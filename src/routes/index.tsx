@@ -163,6 +163,12 @@ function Index() {
                         {t.artist_name} · {Math.floor(t.duration / 60)}:{String(t.duration % 60).padStart(2, "0")}
                       </div>
                     </div>
+                    <audio
+                      src={t.audio}
+                      controls
+                      preload="none"
+                      className="hidden h-8 w-56 sm:block"
+                    />
                     <button
                       onClick={() => handleImport(t)}
                       disabled={importingId !== null}
