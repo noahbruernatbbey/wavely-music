@@ -25,6 +25,11 @@ function Index() {
   const [publicResults, setPublicResults] = useState<Track[]>([]);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
+  const [jamendoResults, setJamendoResults] = useState<JamendoTrack[]>([]);
+  const [jamendoSearching, setJamendoSearching] = useState(false);
+  const [importingId, setImportingId] = useState<string | null>(null);
+  const searchJamendoFn = useServerFn(searchJamendo);
+  const importJamendoFn = useServerFn(importJamendoTrack);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
