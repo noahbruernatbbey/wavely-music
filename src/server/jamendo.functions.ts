@@ -64,6 +64,33 @@ export const searchJamendo = createServerFn({ method: "POST" })
     return { results: json.results ?? [], error: null };
   });
 
+export const browseJamendo = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      tag: z.string().min(1).max(40).optional(),
+      order: z.enum(["popularity_total", "popularity_month", "popularity_week", "releasedate"]).optional(),
+      limit: z.number().int().min(1).max(30).optional(),
+    }).parse,
+  )
+  .handler(async ({ data }) => {
+    const params = new URLSearchParams({
+      client_id: clientId(),
+      format: "json",
+      limit: String(data.limit ?? 18),
+      audioformat: "mp32",
+      order: data.order ?? "popularity_month",
+      groupby: "artist_id",
+    });
+    if (data.tag) params.set("tags", data.tag);
+    const res = await fetch(`${JAMENDO_BASE}/tracks/?${params.toString()}`);
+    if (!res.ok) return { results: [] as JamendoTrack[], error: `Jamendo error ${res.status}` };
+    const json = (await res.json()) as { results?: JamendoTrack[]; headers?: { status?: string; error_message?: string } };
+    if (json.headers?.status && json.headers.status !== "success") {
+      return { results: [] as JamendoTrack[], error: json.headers.error_message ?? "Jamendo request failed" };
+    }
+    return { results: json.results ?? [], error: null };
+  });
+
 export const importJamendoTrack = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
