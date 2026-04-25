@@ -22,6 +22,7 @@ function UploadPage() {
   const [artist, setArtist] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [jamendoOpen, setJamendoOpen] = useState(false);
   const audioInput = useRef<HTMLInputElement>(null);
   const coverInput = useRef<HTMLInputElement>(null);
 
