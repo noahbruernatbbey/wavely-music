@@ -43,24 +43,51 @@ function Index() {
       .then(({ data }) => setPlaylists(data ?? []));
   }, [user]);
 
-  // Public search debounce
+  // Public + Jamendo search debounce
   useEffect(() => {
     const term = query.trim();
-    if (!term) { setPublicResults([]); return; }
+    if (!term) { setPublicResults([]); setJamendoResults([]); return; }
     setSearching(true);
+    setJamendoSearching(true);
     const id = setTimeout(async () => {
-      const { data } = await supabase
-        .from("tracks")
-        .select("*")
-        .eq("is_public", true)
-        .or(`title.ilike.%${term}%,artist.ilike.%${term}%`)
-        .order("created_at", { ascending: false })
-        .limit(40);
-      setPublicResults(data ?? []);
+      const [pub, jam] = await Promise.all([
+        supabase
+          .from("tracks")
+          .select("*")
+          .eq("is_public", true)
+          .or(`title.ilike.%${term}%,artist.ilike.%${term}%`)
+          .order("created_at", { ascending: false })
+          .limit(40),
+        searchJamendoFn({ data: { query: term, limit: 12 } }).catch(() => ({ results: [], error: null })),
+      ]);
+      setPublicResults(pub.data ?? []);
       setSearching(false);
-    }, 250);
+      setJamendoResults(jam.results ?? []);
+      setJamendoSearching(false);
+    }, 350);
     return () => clearTimeout(id);
-  }, [query]);
+  }, [query, searchJamendoFn]);
+
+  const handleImport = async (t: JamendoTrack) => {
+    setImportingId(t.id);
+    try {
+      await importJamendoFn({
+        data: {
+          jamendoId: t.id,
+          title: t.name,
+          artist: t.artist_name,
+          audioUrl: t.audiodownload || t.audio,
+          coverUrl: t.image || null,
+          durationSeconds: t.duration ?? null,
+        },
+      });
+      toast.success(`Imported "${t.name}" to your library`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportingId(null);
+    }
+  };
 
   const showSearch = useMemo(() => query.trim().length > 0, [query]);
 
