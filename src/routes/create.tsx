@@ -1,11 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useSunoHistory, type HistoryEntry } from "@/hooks/useSunoHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { generateSuno, getSunoStatus, saveSunoTrack, type SunoTrack } from "@/server/suno.functions";
 import { toast } from "sonner";
-import { Sparkles, Wand2, Loader2, Save, Music2 } from "lucide-react";
+import { Sparkles, Wand2, Loader2, Save, Music2, History, Trash2, Check, Play } from "lucide-react";
 
 export const Route = createFileRoute("/create")({
   component: CreatePage,
