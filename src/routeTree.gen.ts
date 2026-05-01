@@ -16,6 +16,7 @@ import { Route as PlaylistsRouteImport } from './routes/playlists'
 import { Route as LikedRouteImport } from './routes/liked'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as DiscoverRouteImport } from './routes/discover'
+import { Route as CreateRouteImport } from './routes/create'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUserIdRouteImport } from './routes/u.$userId'
@@ -55,6 +56,11 @@ const DiscoverRoute = DiscoverRouteImport.update({
   path: '/discover',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreateRoute = CreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -74,6 +80,7 @@ const UUserIdRoute = UUserIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/create': typeof CreateRoute
   '/discover': typeof DiscoverRoute
   '/library': typeof LibraryRoute
   '/liked': typeof LikedRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/create': typeof CreateRoute
   '/discover': typeof DiscoverRoute
   '/library': typeof LibraryRoute
   '/liked': typeof LikedRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/create': typeof CreateRoute
   '/discover': typeof DiscoverRoute
   '/library': typeof LibraryRoute
   '/liked': typeof LikedRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/create'
     | '/discover'
     | '/library'
     | '/liked'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/create'
     | '/discover'
     | '/library'
     | '/liked'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/create'
     | '/discover'
     | '/library'
     | '/liked'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  CreateRoute: typeof CreateRoute
   DiscoverRoute: typeof DiscoverRoute
   LibraryRoute: typeof LibraryRoute
   LikedRoute: typeof LikedRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscoverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/create': {
+      id: '/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  CreateRoute: CreateRoute,
   DiscoverRoute: DiscoverRoute,
   LibraryRoute: LibraryRoute,
   LikedRoute: LikedRoute,
