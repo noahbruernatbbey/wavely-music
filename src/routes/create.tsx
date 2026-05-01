@@ -18,6 +18,7 @@ const STYLE_PRESETS = ["Pop", "Lo-fi Hip Hop", "Indie Rock", "Synthwave", "Acous
 function CreatePage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const history = useSunoHistory(user?.id ?? null);
   const [prompt, setPrompt] = useState("");
   const [title, setTitle] = useState("");
   const [style, setStyle] = useState("");
@@ -31,6 +32,9 @@ function CreatePage() {
   const [busy, setBusy] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const promptRef = useRef("");
+  const styleRef = useRef("");
+  const instrumentalRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
