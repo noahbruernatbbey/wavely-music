@@ -46,6 +46,30 @@ function CreatePage() {
     };
   }, []);
 
+  const recordHistory = (id: string, status: string, sunoTracks: SunoTrack[]) => {
+    const existing = history.entries.find((e) => e.taskId === id);
+    history.upsert({
+      taskId: id,
+      prompt: promptRef.current,
+      style: styleRef.current || null,
+      instrumental: instrumentalRef.current,
+      status,
+      createdAt: existing?.createdAt ?? Date.now(),
+      tracks: sunoTracks.map((t) => {
+        const prevSaved = existing?.tracks.find((p) => p.sunoId === t.id)?.savedTrackId ?? null;
+        return {
+          sunoId: t.id,
+          title: t.title,
+          tags: t.tags,
+          audioUrl: t.audioUrl,
+          imageUrl: t.imageUrl,
+          duration: t.duration,
+          savedTrackId: prevSaved,
+        };
+      }),
+    });
+  };
+
   const startPolling = (id: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
     let stopped = false;
@@ -60,15 +84,16 @@ function CreatePage() {
         setTracks(r.status.tracks);
       }
       const playable = r.status.tracks.filter((t) => t.audioUrl).length;
-      if (
+      const done =
         r.status.status === "SUCCESS" ||
         playable >= 2 ||
-        ["CREATE_TASK_FAILED", "GENERATE_AUDIO_FAILED", "SENSITIVE_WORD_ERROR", "CALLBACK_EXCEPTION"].includes(r.status.status)
-      ) {
+        ["CREATE_TASK_FAILED", "GENERATE_AUDIO_FAILED", "SENSITIVE_WORD_ERROR", "CALLBACK_EXCEPTION"].includes(r.status.status);
+      if (done) {
         if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = null;
         stopped = true;
         setBusy(false);
+        recordHistory(id, r.status.status, r.status.tracks);
         if (r.status.errorMessage) toast.error(r.status.errorMessage);
         else if (r.status.status === "SUCCESS" || playable > 0) toast.success("Your song is ready!");
       }
@@ -85,6 +110,9 @@ function CreatePage() {
     setTracks([]);
     setTaskId(null);
     setStatusText("Submitting...");
+    promptRef.current = prompt.trim();
+    styleRef.current = style.trim();
+    instrumentalRef.current = instrumental;
     try {
       const customMode = Boolean(title.trim() && style.trim());
       const r = await generateSuno({
@@ -113,14 +141,14 @@ function CreatePage() {
     }
   };
 
-  const save = async (t: SunoTrack) => {
+  const save = async (t: SunoTrack, fromTaskId?: string) => {
     if (!t.audioUrl) return toast.error("Track not finished yet");
     setSavingId(t.id);
     try {
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       if (!token) throw new Error("Please sign in again");
-      await saveSunoTrack({
+      const r = await saveSunoTrack({
         data: {
           accessToken: token,
           sunoId: t.id,
@@ -131,12 +159,34 @@ function CreatePage() {
           durationSeconds: t.duration ?? null,
         },
       });
+      const tid = fromTaskId ?? taskId;
+      if (tid && r?.trackId) history.markTrackSaved(tid, t.id, r.trackId);
       toast.success("Saved to your library");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSavingId(null);
     }
+  };
+
+  const replay = (entry: HistoryEntry) => {
+    setPrompt(entry.prompt);
+    setStyle(entry.style ?? "");
+    setInstrumental(entry.instrumental);
+    setTaskId(entry.taskId);
+    setStatusText(entry.status);
+    setTracks(
+      entry.tracks.map((t) => ({
+        id: t.sunoId,
+        audioUrl: t.audioUrl,
+        streamAudioUrl: null,
+        imageUrl: t.imageUrl,
+        title: t.title,
+        tags: t.tags,
+        duration: t.duration,
+      })),
+    );
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
