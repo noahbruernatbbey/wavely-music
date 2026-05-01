@@ -123,8 +123,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav className="fixed bottom-[88px] left-0 right-0 z-40 grid grid-cols-5 border-t border-border bg-sidebar md:hidden">
         <Link to="/" className="flex flex-col items-center gap-1 py-2 text-[10px] text-muted-foreground"><Home className="h-5 w-5" /> Home</Link>
         <Link to="/discover" className="flex flex-col items-center gap-1 py-2 text-[10px] text-muted-foreground"><Compass className="h-5 w-5" /> Discover</Link>
+        <Link to="/create" className="flex flex-col items-center gap-1 py-2 text-[10px] text-primary"><Sparkles className="h-5 w-5" /> Create</Link>
         <Link to="/library" className="flex flex-col items-center gap-1 py-2 text-[10px] text-muted-foreground"><Library className="h-5 w-5" /> Library</Link>
-        <Link to="/upload" className="flex flex-col items-center gap-1 py-2 text-[10px] text-muted-foreground"><Upload className="h-5 w-5" /> Upload</Link>
         <Link to="/profile" className="flex flex-col items-center gap-1 py-2 text-[10px] text-muted-foreground"><User className="h-5 w-5" /> Profile</Link>
       </nav>
 
