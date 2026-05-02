@@ -170,5 +170,6 @@ function RadioPage() {
 
       <p className="text-xs text-muted-foreground">Streams provided by SomaFM — listener-supported, commercial-free radio.</p>
     </div>
+    </AppShell>
   );
 }
