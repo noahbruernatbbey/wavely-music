@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Radio as RadioIcon, Play, Pause, Loader2, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "@/context/PlayerContext";
+import { AppShell } from "@/components/AppShell";
 
 type Station = {
   id: string;
@@ -89,6 +90,7 @@ function RadioPage() {
   const active = STATIONS.find((s) => s.id === activeId);
 
   return (
+    <AppShell>
     <div className="space-y-8">
       <header className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary">
