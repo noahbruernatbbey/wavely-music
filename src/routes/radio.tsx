@@ -175,8 +175,22 @@ function RadioPage() {
         </div>
       )}
 
+      <div className="flex flex-wrap gap-2">
+        {(["All", "iHeartRadio", "SomaFM"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${
+              filter === f ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {STATIONS.map((s) => {
+        {visible.map((s) => {
           const isActive = activeId === s.id;
           return (
             <button
@@ -186,7 +200,10 @@ function RadioPage() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.genre}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.genre}</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-primary/80">· {s.network}</span>
+                  </div>
                   <div className="mt-1 text-lg font-bold">{s.name}</div>
                   <div className="mt-1 text-sm text-muted-foreground">{s.tagline}</div>
                 </div>
@@ -214,7 +231,7 @@ function RadioPage() {
         })}
       </div>
 
-      <p className="text-xs text-muted-foreground">Streams provided by SomaFM — listener-supported, commercial-free radio.</p>
+      <p className="text-xs text-muted-foreground">Streams provided by iHeartRadio and SomaFM.</p>
     </div>
     </AppShell>
   );
