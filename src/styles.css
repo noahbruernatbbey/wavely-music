@@ -86,7 +86,7 @@
   body {
     background: radial-gradient(ellipse at top, oklch(0.22 0.04 150 / 0.4), var(--color-background) 60%);
     color: var(--color-foreground);
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     -webkit-font-smoothing: antialiased;
   }
 }
