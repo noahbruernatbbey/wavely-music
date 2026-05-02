@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RadioRouteImport } from './routes/radio'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PlaylistsRouteImport } from './routes/playlists'
 import { Route as LikedRouteImport } from './routes/liked'
@@ -29,6 +30,11 @@ const UploadRoute = UploadRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RadioRoute = RadioRouteImport.update({
+  id: '/radio',
+  path: '/radio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/liked': typeof LikedRoute
   '/playlists': typeof PlaylistsRoute
   '/profile': typeof ProfileRoute
+  '/radio': typeof RadioRoute
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
   '/u/$userId': typeof UUserIdRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/liked': typeof LikedRoute
   '/playlists': typeof PlaylistsRoute
   '/profile': typeof ProfileRoute
+  '/radio': typeof RadioRoute
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
   '/u/$userId': typeof UUserIdRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/liked': typeof LikedRoute
   '/playlists': typeof PlaylistsRoute
   '/profile': typeof ProfileRoute
+  '/radio': typeof RadioRoute
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
   '/u/$userId': typeof UUserIdRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/liked'
     | '/playlists'
     | '/profile'
+    | '/radio'
     | '/settings'
     | '/upload'
     | '/u/$userId'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/liked'
     | '/playlists'
     | '/profile'
+    | '/radio'
     | '/settings'
     | '/upload'
     | '/u/$userId'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/liked'
     | '/playlists'
     | '/profile'
+    | '/radio'
     | '/settings'
     | '/upload'
     | '/u/$userId'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   LikedRoute: typeof LikedRoute
   PlaylistsRoute: typeof PlaylistsRoute
   ProfileRoute: typeof ProfileRoute
+  RadioRoute: typeof RadioRoute
   SettingsRoute: typeof SettingsRoute
   UploadRoute: typeof UploadRoute
   UUserIdRoute: typeof UUserIdRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/radio': {
+      id: '/radio'
+      path: '/radio'
+      fullPath: '/radio'
+      preLoaderRoute: typeof RadioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   LikedRoute: LikedRoute,
   PlaylistsRoute: PlaylistsRoute,
   ProfileRoute: ProfileRoute,
+  RadioRoute: RadioRoute,
   SettingsRoute: SettingsRoute,
   UploadRoute: UploadRoute,
   UUserIdRoute: UUserIdRoute,
