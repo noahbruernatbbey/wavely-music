@@ -20,8 +20,6 @@ Wavely is a music app built to explore new sounds, create vibes, and make listen
 ---
 
 ## 🛠️ Tech Stack
-- Frontend: (add what you used, e.g. HTML, CSS, JavaScript, React)
-- Backend: (if any)
 - Hosting: Lovable
 
 
