@@ -158,6 +158,14 @@ function RadioPage() {
     }
   };
 
+  const failPlayback = (msg?: string) => {
+    setLoading(false);
+    setActiveId(null);
+    toast.error("Stream failed to play", {
+      description: msg ?? "The station may be offline, geo-restricted, or blocked by CORS.",
+    });
+  };
+
   const playStation = (s: Station) => {
     const el = audioRef.current;
     if (!el) return;
@@ -175,25 +183,24 @@ function RadioPage() {
     if (s.hls) {
       if (el.canPlayType("application/vnd.apple.mpegurl")) {
         el.src = s.url;
-        el.play().catch(() => { setLoading(false); setActiveId(null); });
+        el.play().catch(() => failPlayback());
       } else if (Hls.isSupported()) {
         const hls = new Hls({ enableWorker: true });
         hlsRef.current = hls;
         hls.loadSource(s.url);
         hls.attachMedia(el);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          el.play().catch(() => { setLoading(false); setActiveId(null); });
+          el.play().catch(() => failPlayback());
         });
         hls.on(Hls.Events.ERROR, (_e, data) => {
-          if (data.fatal) { stopHls(); setLoading(false); setActiveId(null); }
+          if (data.fatal) { stopHls(); failPlayback(`HLS error: ${data.details ?? data.type}`); }
         });
       } else {
-        setLoading(false);
-        setActiveId(null);
+        failPlayback("HLS playback not supported in this browser.");
       }
     } else {
       el.src = s.url;
-      el.play().catch(() => { setLoading(false); setActiveId(null); });
+      el.play().catch(() => failPlayback());
     }
   };
 
