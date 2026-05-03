@@ -63,7 +63,54 @@ function RadioPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [volume, setVolume] = useState(0.8);
-  const [filter, setFilter] = useState<"All" | "iHeartRadio" | "SomaFM">("All");
+  const [filter, setFilter] = useState<"All" | "iHeartRadio" | "SomaFM" | "Custom">("All");
+  const [customStations, setCustomStations] = useState<Station[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_KEY);
+      if (raw) setCustomStations(JSON.parse(raw));
+    } catch {/* ignore */}
+  }, []);
+
+  const persistCustom = (next: Station[]) => {
+    setCustomStations(next);
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(next)); } catch {/* ignore */}
+  };
+
+  const addCustom = () => {
+    const name = newName.trim();
+    const url = newUrl.trim();
+    if (!name || name.length > 60) { setFormError("Enter a name (1–60 characters)."); return; }
+    if (!/^https?:\/\//i.test(url)) { setFormError("URL must start with http:// or https://"); return; }
+    const isHls = /\.m3u8(\?|$)/i.test(url);
+    const station: Station = {
+      id: `custom-${Date.now()}`,
+      name,
+      tagline: "Custom station",
+      genre: "Custom",
+      network: "Custom",
+      url,
+      hls: isHls,
+      color: "from-sky-500/30 to-cyan-500/10",
+    };
+    persistCustom([station, ...customStations]);
+    setNewName(""); setNewUrl(""); setFormError(null);
+    setDialogOpen(false);
+  };
+
+  const removeCustom = (id: string) => {
+    if (activeId === id) {
+      audioRef.current?.pause();
+      stopHls();
+      setActiveId(null);
+    }
+    persistCustom(customStations.filter((s) => s.id !== id));
+  };
 
   useEffect(() => {
     const el = new Audio();
