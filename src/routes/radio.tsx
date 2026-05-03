@@ -126,7 +126,13 @@ function RadioPage() {
     audioRef.current = el;
     const onPlaying = () => setLoading(false);
     const onWaiting = () => setLoading(true);
-    const onError = () => { setLoading(false); setActiveId(null); };
+    const onError = () => {
+      setLoading(false);
+      setActiveId((id) => {
+        if (id) toast.error("Stream failed to play", { description: "The station may be offline, geo-restricted, or blocked by CORS." });
+        return null;
+      });
+    };
     el.addEventListener("playing", onPlaying);
     el.addEventListener("waiting", onWaiting);
     el.addEventListener("error", onError);
