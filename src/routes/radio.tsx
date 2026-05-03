@@ -307,8 +307,32 @@ function RadioPage() {
         })}
       </div>
 
-      <p className="text-xs text-muted-foreground">Streams provided by iHeartRadio and SomaFM.</p>
+      <p className="text-xs text-muted-foreground">Streams provided by iHeartRadio and SomaFM. Custom stations are stored on this device.</p>
     </div>
+
+    <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setFormError(null); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add a custom station</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="station-name">Station name</Label>
+            <Input id="station-name" value={newName} maxLength={60} onChange={(e) => setNewName(e.target.value)} placeholder="My favorite radio" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="station-url">Stream URL</Label>
+            <Input id="station-url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://example.com/stream.mp3 or .m3u8" />
+            <p className="text-xs text-muted-foreground">Paste a direct audio stream URL (MP3, AAC, or HLS .m3u8).</p>
+          </div>
+          {formError && <p className="text-xs text-destructive">{formError}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={addCustom}>Add station</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </AppShell>
   );
 }
