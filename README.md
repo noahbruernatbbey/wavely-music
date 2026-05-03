@@ -22,6 +22,65 @@ Wavely is a music app built to explore new sounds, create vibes, and make listen
 ## 🛠️ Tech Stack
 - Hosting: Lovable
 
+---
+
+## 🎶 Live Radio Stations (Copy the URL!) go to 👉 https://wavely-music.lovable.app/radio click add station and add a name and one of the links doen below
+
+## ❤️ Heart Radio
+Heart 70s: https://media-ssl.musicradio.com/Heart70s
+
+Heart 80s: https://media-ssl.musicradio.com/Heart80s
+
+Heart 90s: https://media-ssl.musicradio.com/Heart90s
+
+Heart 00s: https://media-ssl.musicradio.com/Heart00s
+
+Heart Dance: https://media-ssl.musicradio.com/HeartDance
+
+## 🌟 Capital Radio Group
+
+Capital UK: https://media-ssl.musicradio.com/CapitalUK
+
+Capital Dance: https://media-ssl.musicradio.com/CapitalDance
+
+Capital XTRA Reloaded: https://media-ssl.musicradio.com/CapitalXTRAReloaded
+
+Capital Chill: https://media-ssl.musicradio.com/CapitalChill
+
+Capital Anthems: https://media-ssl.musicradio.com/CapitalAnthems
+
+## 🎷 Smooth Radio Group
+
+Smooth UK: https://media-ssl.musicradio.com/SmoothUK
+
+Smooth Chill: https://media-ssl.musicradio.com/SmoothChill
+
+Smooth Country: https://media-ssl.musicradio.com/SmoothCountry
+
+Smooth 70s: https://media-ssl.musicradio.com/Smooth70s
+
+Smooth 80s: https://media-ssl.musicradio.com/Smooth80s
+
+## 🎸 Radio X
+
+Radio X UK: https://media-ssl.musicradio.com/RadioXUK
+
+Radio X Classic Rock: https://media-ssl.musicradio.com/RadioXClassicRock
+
+Radio X 90s: https://media-ssl.musicradio.com/RadioX90s
+
+Radio X 00s: https://media-ssl.musicradio.com/RadioX00s
+
+Radio X Chilled: https://media-ssl.musicradio.com/RadioXChilled
+
+## 🎼 Classic & Gold
+Classic FM: https://media-ssl.musicradio.com/ClassicFM
+
+Gold: https://media-ssl.musicradio.com/Gold
+
+LBC UK: https://media-ssl.musicradio.com/LBCUK
+
+
 
 ---
 
