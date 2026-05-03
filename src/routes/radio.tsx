@@ -184,8 +184,9 @@ function RadioPage() {
     }
   };
 
-  const active = STATIONS.find((s) => s.id === activeId);
-  const visible = filter === "All" ? STATIONS : STATIONS.filter((s) => s.network === filter);
+  const allStations = [...customStations, ...STATIONS];
+  const active = allStations.find((s) => s.id === activeId);
+  const visible = filter === "All" ? allStations : allStations.filter((s) => s.network === filter);
 
 
   return (
