@@ -5,10 +5,17 @@ import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2 } from 
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "@/context/PlayerContext";
 import { AppShell } from "@/components/AppShell";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const SUGGESTED_URLS: { name: string; url: string }[] = [
+  { name: "Heart 80s (iHeart HLS)", url: "https://stream.revma.ihrhls.com/zc8121/hls.m3u8" },
+  { name: "BBC Radio 1 (HLS)", url: "https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_one/bbc_radio_one.isml/bbc_radio_one-audio%3d96000.norewind.m3u8" },
+  { name: "KEXP 90.3 Seattle", url: "https://kexp-mp3-128.streamguys1.com/kexp128.mp3" },
+];
 
 type Station = {
   id: string;
@@ -119,7 +126,13 @@ function RadioPage() {
     audioRef.current = el;
     const onPlaying = () => setLoading(false);
     const onWaiting = () => setLoading(true);
-    const onError = () => { setLoading(false); setActiveId(null); };
+    const onError = () => {
+      setLoading(false);
+      setActiveId((id) => {
+        if (id) toast.error("Stream failed to play", { description: "The station may be offline, geo-restricted, or blocked by CORS." });
+        return null;
+      });
+    };
     el.addEventListener("playing", onPlaying);
     el.addEventListener("waiting", onWaiting);
     el.addEventListener("error", onError);
@@ -145,6 +158,14 @@ function RadioPage() {
     }
   };
 
+  const failPlayback = (msg?: string) => {
+    setLoading(false);
+    setActiveId(null);
+    toast.error("Stream failed to play", {
+      description: msg ?? "The station may be offline, geo-restricted, or blocked by CORS.",
+    });
+  };
+
   const playStation = (s: Station) => {
     const el = audioRef.current;
     if (!el) return;
@@ -162,25 +183,24 @@ function RadioPage() {
     if (s.hls) {
       if (el.canPlayType("application/vnd.apple.mpegurl")) {
         el.src = s.url;
-        el.play().catch(() => { setLoading(false); setActiveId(null); });
+        el.play().catch(() => failPlayback());
       } else if (Hls.isSupported()) {
         const hls = new Hls({ enableWorker: true });
         hlsRef.current = hls;
         hls.loadSource(s.url);
         hls.attachMedia(el);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          el.play().catch(() => { setLoading(false); setActiveId(null); });
+          el.play().catch(() => failPlayback());
         });
         hls.on(Hls.Events.ERROR, (_e, data) => {
-          if (data.fatal) { stopHls(); setLoading(false); setActiveId(null); }
+          if (data.fatal) { stopHls(); failPlayback(`HLS error: ${data.details ?? data.type}`); }
         });
       } else {
-        setLoading(false);
-        setActiveId(null);
+        failPlayback("HLS playback not supported in this browser.");
       }
     } else {
       el.src = s.url;
-      el.play().catch(() => { setLoading(false); setActiveId(null); });
+      el.play().catch(() => failPlayback());
     }
   };
 
@@ -314,6 +334,9 @@ function RadioPage() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add a custom station</DialogTitle>
+          <DialogDescription>
+            Paste a direct audio stream URL (MP3, AAC, or HLS .m3u8). Some broadcasters geo-restrict or block browsers via CORS — if a stream won't play, try one of the suggestions below.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
@@ -323,7 +346,21 @@ function RadioPage() {
           <div className="space-y-2">
             <Label htmlFor="station-url">Stream URL</Label>
             <Input id="station-url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://example.com/stream.mp3 or .m3u8" />
-            <p className="text-xs text-muted-foreground">Paste a direct audio stream URL (MP3, AAC, or HLS .m3u8).</p>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Known-working examples</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SUGGESTED_URLS.map((sug) => (
+                <button
+                  key={sug.url}
+                  type="button"
+                  onClick={() => { setNewUrl(sug.url); if (!newName.trim()) setNewName(sug.name); }}
+                  className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs hover:border-primary hover:text-primary"
+                >
+                  {sug.name}
+                </button>
+              ))}
+            </div>
           </div>
           {formError && <p className="text-xs text-destructive">{formError}</p>}
         </div>
