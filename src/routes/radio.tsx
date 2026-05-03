@@ -1,21 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Radio as RadioIcon, Play, Pause, Loader2, Volume2 } from "lucide-react";
+import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "@/context/PlayerContext";
 import { AppShell } from "@/components/AppShell";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 type Station = {
   id: string;
   name: string;
   tagline: string;
   genre: string;
-  network: "SomaFM" | "iHeartRadio";
+  network: "SomaFM" | "iHeartRadio" | "Custom";
   url: string;
   hls?: boolean;
   color: string;
 };
+
+const CUSTOM_KEY = "wavely.customStations.v1";
 
 const STATIONS: Station[] = [
   // iHeartRadio (HLS)
@@ -57,7 +63,54 @@ function RadioPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [volume, setVolume] = useState(0.8);
-  const [filter, setFilter] = useState<"All" | "iHeartRadio" | "SomaFM">("All");
+  const [filter, setFilter] = useState<"All" | "iHeartRadio" | "SomaFM" | "Custom">("All");
+  const [customStations, setCustomStations] = useState<Station[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_KEY);
+      if (raw) setCustomStations(JSON.parse(raw));
+    } catch {/* ignore */}
+  }, []);
+
+  const persistCustom = (next: Station[]) => {
+    setCustomStations(next);
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(next)); } catch {/* ignore */}
+  };
+
+  const addCustom = () => {
+    const name = newName.trim();
+    const url = newUrl.trim();
+    if (!name || name.length > 60) { setFormError("Enter a name (1–60 characters)."); return; }
+    if (!/^https?:\/\//i.test(url)) { setFormError("URL must start with http:// or https://"); return; }
+    const isHls = /\.m3u8(\?|$)/i.test(url);
+    const station: Station = {
+      id: `custom-${Date.now()}`,
+      name,
+      tagline: "Custom station",
+      genre: "Custom",
+      network: "Custom",
+      url,
+      hls: isHls,
+      color: "from-sky-500/30 to-cyan-500/10",
+    };
+    persistCustom([station, ...customStations]);
+    setNewName(""); setNewUrl(""); setFormError(null);
+    setDialogOpen(false);
+  };
+
+  const removeCustom = (id: string) => {
+    if (activeId === id) {
+      audioRef.current?.pause();
+      stopHls();
+      setActiveId(null);
+    }
+    persistCustom(customStations.filter((s) => s.id !== id));
+  };
 
   useEffect(() => {
     const el = new Audio();
@@ -131,8 +184,9 @@ function RadioPage() {
     }
   };
 
-  const active = STATIONS.find((s) => s.id === activeId);
-  const visible = filter === "All" ? STATIONS : STATIONS.filter((s) => s.network === filter);
+  const allStations = [...customStations, ...STATIONS];
+  const active = allStations.find((s) => s.id === activeId);
+  const visible = filter === "All" ? allStations : allStations.filter((s) => s.network === filter);
 
 
   return (
@@ -175,8 +229,8 @@ function RadioPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        {(["All", "iHeartRadio", "SomaFM"] as const).map((f) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {(["All", "iHeartRadio", "SomaFM", "Custom"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -187,6 +241,13 @@ function RadioPage() {
             {f}
           </button>
         ))}
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/60 px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add station
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -207,15 +268,30 @@ function RadioPage() {
                   <div className="mt-1 text-lg font-bold">{s.name}</div>
                   <div className="mt-1 text-sm text-muted-foreground">{s.tagline}</div>
                 </div>
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-background/80 text-foreground shadow group-hover:bg-primary group-hover:text-primary-foreground">
-                  {isActive && loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : isActive ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4 translate-x-0.5" />
+                <div className="flex items-center gap-2">
+                  {s.network === "Custom" && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); removeCustom(s.id); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); removeCustom(s.id); } }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+                      aria-label="Remove station"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </span>
                   )}
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-background/80 text-foreground shadow group-hover:bg-primary group-hover:text-primary-foreground">
+                    {isActive && loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isActive ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4 translate-x-0.5" />
+                    )}
+                  </div>
                 </div>
+
               </div>
               {isActive && (
                 <div className="mt-3 flex items-center gap-2 text-xs font-medium text-red-500">
@@ -231,8 +307,32 @@ function RadioPage() {
         })}
       </div>
 
-      <p className="text-xs text-muted-foreground">Streams provided by iHeartRadio and SomaFM.</p>
+      <p className="text-xs text-muted-foreground">Streams provided by iHeartRadio and SomaFM. Custom stations are stored on this device.</p>
     </div>
+
+    <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setFormError(null); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add a custom station</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="station-name">Station name</Label>
+            <Input id="station-name" value={newName} maxLength={60} onChange={(e) => setNewName(e.target.value)} placeholder="My favorite radio" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="station-url">Stream URL</Label>
+            <Input id="station-url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://example.com/stream.mp3 or .m3u8" />
+            <p className="text-xs text-muted-foreground">Paste a direct audio stream URL (MP3, AAC, or HLS .m3u8).</p>
+          </div>
+          {formError && <p className="text-xs text-destructive">{formError}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={addCustom}>Add station</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </AppShell>
   );
 }
