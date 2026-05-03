@@ -15,11 +15,13 @@ type Station = {
   name: string;
   tagline: string;
   genre: string;
-  network: "SomaFM" | "iHeartRadio";
+  network: "SomaFM" | "iHeartRadio" | "Custom";
   url: string;
   hls?: boolean;
   color: string;
 };
+
+const CUSTOM_KEY = "wavely.customStations.v1";
 
 const STATIONS: Station[] = [
   // iHeartRadio (HLS)
