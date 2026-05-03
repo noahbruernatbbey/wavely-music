@@ -229,8 +229,8 @@ function RadioPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        {(["All", "iHeartRadio", "SomaFM"] as const).map((f) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {(["All", "iHeartRadio", "SomaFM", "Custom"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -241,6 +241,13 @@ function RadioPage() {
             {f}
           </button>
         ))}
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/60 px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add station
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
