@@ -5,10 +5,17 @@ import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2 } from 
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "@/context/PlayerContext";
 import { AppShell } from "@/components/AppShell";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const SUGGESTED_URLS: { name: string; url: string }[] = [
+  { name: "Heart 80s (iHeart HLS)", url: "https://stream.revma.ihrhls.com/zc8121/hls.m3u8" },
+  { name: "BBC Radio 1 (HLS)", url: "https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_one/bbc_radio_one.isml/bbc_radio_one-audio%3d96000.norewind.m3u8" },
+  { name: "KEXP 90.3 Seattle", url: "https://kexp-mp3-128.streamguys1.com/kexp128.mp3" },
+];
 
 type Station = {
   id: string;
