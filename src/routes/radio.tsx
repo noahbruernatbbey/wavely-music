@@ -268,15 +268,30 @@ function RadioPage() {
                   <div className="mt-1 text-lg font-bold">{s.name}</div>
                   <div className="mt-1 text-sm text-muted-foreground">{s.tagline}</div>
                 </div>
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-background/80 text-foreground shadow group-hover:bg-primary group-hover:text-primary-foreground">
-                  {isActive && loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : isActive ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4 translate-x-0.5" />
+                <div className="flex items-center gap-2">
+                  {s.network === "Custom" && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); removeCustom(s.id); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); removeCustom(s.id); } }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+                      aria-label="Remove station"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </span>
                   )}
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-background/80 text-foreground shadow group-hover:bg-primary group-hover:text-primary-foreground">
+                    {isActive && loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isActive ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4 translate-x-0.5" />
+                    )}
+                  </div>
                 </div>
+
               </div>
               {isActive && (
                 <div className="mt-3 flex items-center gap-2 text-xs font-medium text-red-500">
