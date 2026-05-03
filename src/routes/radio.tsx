@@ -334,6 +334,9 @@ function RadioPage() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add a custom station</DialogTitle>
+          <DialogDescription>
+            Paste a direct audio stream URL (MP3, AAC, or HLS .m3u8). Some broadcasters geo-restrict or block browsers via CORS — if a stream won't play, try one of the suggestions below.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
@@ -343,7 +346,21 @@ function RadioPage() {
           <div className="space-y-2">
             <Label htmlFor="station-url">Stream URL</Label>
             <Input id="station-url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://example.com/stream.mp3 or .m3u8" />
-            <p className="text-xs text-muted-foreground">Paste a direct audio stream URL (MP3, AAC, or HLS .m3u8).</p>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Known-working examples</p>
+            <div className="flex flex-wrap gap-1.5">
+              {SUGGESTED_URLS.map((sug) => (
+                <button
+                  key={sug.url}
+                  type="button"
+                  onClick={() => { setNewUrl(sug.url); if (!newName.trim()) setNewName(sug.name); }}
+                  className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs hover:border-primary hover:text-primary"
+                >
+                  {sug.name}
+                </button>
+              ))}
+            </div>
           </div>
           {formError && <p className="text-xs text-destructive">{formError}</p>}
         </div>
