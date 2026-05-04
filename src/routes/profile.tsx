@@ -1,11 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { publicUrl } from "@/lib/storage";
 import { toast } from "sonner";
-import { User as UserIcon, Camera, X } from "lucide-react";
+import { User as UserIcon, Camera, X, Search, Globe, Lock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+
+type SearchResult = { user_id: string; display_name: string | null; avatar_url: string | null };
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -22,6 +25,10 @@ function ProfilePage() {
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [trackCount, setTrackCount] = useState(0);
+  const [isPublic, setIsPublic] = useState(false);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -29,15 +36,34 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("display_name, avatar_url, bio").eq("user_id", user.id).maybeSingle()
+    supabase.from("profiles").select("display_name, avatar_url, bio, is_public").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => {
         setDisplayName(data?.display_name ?? "");
         setAvatarPath(data?.avatar_url ?? null);
         setBio((data as { bio?: string | null } | null)?.bio ?? "");
+        setIsPublic(Boolean((data as { is_public?: boolean } | null)?.is_public));
       });
     supabase.from("tracks").select("*", { count: "exact", head: true }).eq("user_id", user.id)
       .then(({ count }) => setTrackCount(count ?? 0));
   }, [user]);
+
+  // Debounced search of public profiles
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) { setResults([]); return; }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url")
+        .eq("is_public", true)
+        .ilike("display_name", `%${q}%`)
+        .limit(20);
+      setResults((data ?? []) as SearchResult[]);
+      setSearching(false);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const save = async () => {
     if (!user) return;
@@ -46,6 +72,14 @@ function ProfilePage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Profile saved");
+  };
+
+  const togglePublicProfile = async (val: boolean) => {
+    if (!user) return;
+    setIsPublic(val);
+    const { error } = await supabase.from("profiles").update({ is_public: val } as never).eq("user_id", user.id);
+    if (error) { setIsPublic(!val); return toast.error(error.message); }
+    toast.success(val ? "Profile is now public" : "Profile is now private");
   };
 
   const onAvatarSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,12 +181,60 @@ function ProfilePage() {
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</label>
               <input value={user?.email ?? ""} disabled className="w-full rounded-md border border-border bg-input/50 px-3 py-2 text-sm text-muted-foreground" />
             </div>
+            <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+              <div>
+                <div className="flex items-center gap-1.5 text-sm font-semibold">
+                  {isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                  Public profile
+                </div>
+                <p className="text-[11px] text-muted-foreground">Allow others to find your profile in search.</p>
+              </div>
+              <Switch checked={isPublic} onCheckedChange={togglePublicProfile} />
+            </div>
             <button
               onClick={save} disabled={busy}
               className="rounded-full bg-primary px-6 py-2 font-semibold text-primary-foreground transition-transform hover:scale-105 disabled:opacity-50"
             >
               {busy ? "Saving…" : "Save"}
             </button>
+          </div>
+        </div>
+
+        <div className="mt-10 rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-bold">Find people</h2>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search public profiles by name…"
+              className="w-full rounded-md border border-border bg-input pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div className="mt-4 space-y-2">
+            {search.trim().length < 2 && (
+              <p className="text-xs text-muted-foreground">Type at least 2 characters to search.</p>
+            )}
+            {searching && <p className="text-xs text-muted-foreground">Searching…</p>}
+            {!searching && search.trim().length >= 2 && results.length === 0 && (
+              <p className="text-xs text-muted-foreground">No public profiles match "{search}".</p>
+            )}
+            {results.map((r) => {
+              const av = r.avatar_url ? publicUrl("avatars", r.avatar_url) : null;
+              return (
+                <Link
+                  key={r.user_id}
+                  to="/u/$userId"
+                  params={{ userId: r.user_id }}
+                  className="flex items-center gap-3 rounded-md border border-border bg-background/50 px-3 py-2 transition-colors hover:border-primary hover:bg-muted/40"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-secondary">
+                    {av ? <img src={av} alt="" className="h-full w-full object-cover" /> : <UserIcon className="h-4 w-4 text-muted-foreground" />}
+                  </div>
+                  <div className="text-sm font-semibold">{r.display_name || "Unnamed user"}</div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
