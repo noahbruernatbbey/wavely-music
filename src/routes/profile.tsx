@@ -1,11 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { publicUrl } from "@/lib/storage";
 import { toast } from "sonner";
-import { User as UserIcon, Camera, X } from "lucide-react";
+import { User as UserIcon, Camera, X, Search, Globe, Lock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+
+type SearchResult = { user_id: string; display_name: string | null; avatar_url: string | null };
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
