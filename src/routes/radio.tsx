@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2 } from "lucide-react";
+import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2, Globe, Lock } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "@/context/PlayerContext";
 import { AppShell } from "@/components/AppShell";
@@ -9,10 +9,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const SUGGESTED_URLS: { name: string; url: string }[] = [
-  { name: "Heart 80s (iHeart HLS)", url: "https://stream.revma.ihrhls.com/zc8121/hls.m3u8" },
+  { name: "Heart 70s", url: "https://media-ssl.musicradio.com/Heart70s" },
+  { name: "Heart 80s", url: "https://media-ssl.musicradio.com/Heart80s" },
+  { name: "Heart 90s", url: "https://media-ssl.musicradio.com/Heart90s" },
+  { name: "Heart 00s", url: "https://media-ssl.musicradio.com/Heart00s" },
+  { name: "Heart Dance", url: "https://media-ssl.musicradio.com/HeartDance" },
+  { name: "Capital UK", url: "https://media-ssl.musicradio.com/CapitalUK" },
+  { name: "Smooth UK", url: "https://media-ssl.musicradio.com/SmoothUK" },
+  { name: "Classic FM", url: "https://media-ssl.musicradio.com/ClassicFM" },
+  { name: "Gold", url: "https://media-ssl.musicradio.com/Gold" },
+  { name: "LBC UK", url: "https://media-ssl.musicradio.com/LBCUK" },
   { name: "BBC Radio 1 (HLS)", url: "https://as-hls-ww-live.akamaized.net/pool_904/live/ww/bbc_radio_one/bbc_radio_one.isml/bbc_radio_one-audio%3d96000.norewind.m3u8" },
   { name: "KEXP 90.3 Seattle", url: "https://kexp-mp3-128.streamguys1.com/kexp128.mp3" },
 ];
@@ -26,19 +38,19 @@ type Station = {
   url: string;
   hls?: boolean;
   color: string;
+  ownerId?: string | null;
+  isPublic?: boolean;
 };
 
 const CUSTOM_KEY = "wavely.customStations.v1";
 
 const STATIONS: Station[] = [
-  // iHeartRadio (HLS)
   { id: "ihr-z100", name: "Z100 New York", tagline: "New York's #1 Hit Music Station", genre: "Top 40", network: "iHeartRadio", url: "https://stream.revma.ihrhls.com/zc185/hls.m3u8", hls: true, color: "from-red-500/30 to-pink-500/10" },
   { id: "ihr-kiis", name: "102.7 KIIS FM", tagline: "Los Angeles' #1 Hit Music Station", genre: "Top 40", network: "iHeartRadio", url: "https://stream.revma.ihrhls.com/zc181/hls.m3u8", hls: true, color: "from-fuchsia-500/30 to-purple-500/10" },
   { id: "ihr-power106", name: "Power 106 LA", tagline: "LA's #1 for Hip Hop", genre: "Hip-Hop", network: "iHeartRadio", url: "https://stream.revma.ihrhls.com/zc6694/hls.m3u8", hls: true, color: "from-orange-500/30 to-red-500/10" },
   { id: "ihr-kissla", name: "103.5 KISS FM Chicago", tagline: "Chicago's #1 Hit Music Station", genre: "Top 40", network: "iHeartRadio", url: "https://stream.revma.ihrhls.com/zc197/hls.m3u8", hls: true, color: "from-pink-500/30 to-rose-500/10" },
   { id: "ihr-real925", name: "REAL 92.3 LA", tagline: "LA's New Hip Hop", genre: "Hip-Hop", network: "iHeartRadio", url: "https://stream.revma.ihrhls.com/zc4543/hls.m3u8", hls: true, color: "from-violet-500/30 to-indigo-500/10" },
   { id: "ihr-channelq", name: "Channel Q", tagline: "Pop hits and the LGBTQ+ community", genre: "Pop", network: "iHeartRadio", url: "https://stream.revma.ihrhls.com/zc7615/hls.m3u8", hls: true, color: "from-rose-500/30 to-pink-500/10" },
-  // SomaFM
   { id: "soma-groove", name: "Groove Salad", tagline: "Chilled ambient/downtempo beats and grooves", genre: "Ambient", network: "SomaFM", url: "https://ice1.somafm.com/groovesalad-128-mp3", color: "from-emerald-500/30 to-teal-500/10" },
   { id: "soma-defcon", name: "DEF CON Radio", tagline: "Music for hacking — DEF CON", genre: "Electronic", network: "SomaFM", url: "https://ice1.somafm.com/defcon-128-mp3", color: "from-red-500/30 to-orange-500/10" },
   { id: "soma-lush", name: "Lush", tagline: "Sensuous and mellow vocals, mostly female", genre: "Vocal", network: "SomaFM", url: "https://ice1.somafm.com/lush-128-mp3", color: "from-pink-500/30 to-fuchsia-500/10" },
@@ -65,6 +77,7 @@ export const Route = createFileRoute("/radio")({
 
 function RadioPage() {
   const player = usePlayer();
+  const { user } = useAuth();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -75,48 +88,103 @@ function RadioPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
+  const [newPublic, setNewPublic] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Load custom stations: from DB if signed in (own + public), else localStorage
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CUSTOM_KEY);
-      if (raw) setCustomStations(JSON.parse(raw));
-    } catch {/* ignore */}
-  }, []);
+    let cancelled = false;
+    (async () => {
+      if (user) {
+        const { data } = await supabase
+          .from("custom_stations")
+          .select("id,user_id,name,url,hls,is_public")
+          .or(`user_id.eq.${user.id},is_public.eq.true`)
+          .order("created_at", { ascending: false });
+        if (cancelled) return;
+        setCustomStations(
+          (data ?? []).map((r) => ({
+            id: r.id,
+            name: r.name,
+            tagline: r.user_id === user.id ? "Your station" : "Community station",
+            genre: "Custom",
+            network: "Custom" as const,
+            url: r.url,
+            hls: r.hls,
+            color: "from-sky-500/30 to-cyan-500/10",
+            ownerId: r.user_id,
+            isPublic: r.is_public,
+          })),
+        );
+      } else {
+        try {
+          const raw = localStorage.getItem(CUSTOM_KEY);
+          if (raw) setCustomStations(JSON.parse(raw));
+        } catch { /* ignore */ }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
-  const persistCustom = (next: Station[]) => {
-    setCustomStations(next);
-    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(next)); } catch {/* ignore */}
+  const persistLocal = (next: Station[]) => {
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(next)); } catch { /* ignore */ }
   };
 
-  const addCustom = () => {
+  const addCustom = async () => {
     const name = newName.trim();
     const url = newUrl.trim();
     if (!name || name.length > 60) { setFormError("Enter a name (1–60 characters)."); return; }
     if (!/^https?:\/\//i.test(url)) { setFormError("URL must start with http:// or https://"); return; }
     const isHls = /\.m3u8(\?|$)/i.test(url);
-    const station: Station = {
-      id: `custom-${Date.now()}`,
-      name,
-      tagline: "Custom station",
-      genre: "Custom",
-      network: "Custom",
-      url,
-      hls: isHls,
-      color: "from-sky-500/30 to-cyan-500/10",
-    };
-    persistCustom([station, ...customStations]);
-    setNewName(""); setNewUrl(""); setFormError(null);
+
+    if (user) {
+      const { data, error } = await supabase
+        .from("custom_stations")
+        .insert({ user_id: user.id, name, url, hls: isHls, is_public: newPublic })
+        .select("id,user_id,name,url,hls,is_public")
+        .single();
+      if (error || !data) { setFormError(error?.message ?? "Failed to save station"); return; }
+      setCustomStations([{
+        id: data.id, name: data.name, tagline: "Your station", genre: "Custom", network: "Custom",
+        url: data.url, hls: data.hls, color: "from-sky-500/30 to-cyan-500/10",
+        ownerId: data.user_id, isPublic: data.is_public,
+      }, ...customStations]);
+      toast.success("Station added");
+    } else {
+      const station: Station = {
+        id: `custom-${Date.now()}`, name, tagline: "Custom station", genre: "Custom",
+        network: "Custom", url, hls: isHls, color: "from-sky-500/30 to-cyan-500/10",
+      };
+      const next = [station, ...customStations];
+      setCustomStations(next);
+      persistLocal(next);
+    }
+    setNewName(""); setNewUrl(""); setNewPublic(false); setFormError(null);
     setDialogOpen(false);
   };
 
-  const removeCustom = (id: string) => {
+  const removeCustom = async (id: string) => {
     if (activeId === id) {
       audioRef.current?.pause();
       stopHls();
       setActiveId(null);
     }
-    persistCustom(customStations.filter((s) => s.id !== id));
+    if (user) {
+      const { error } = await supabase.from("custom_stations").delete().eq("id", id);
+      if (error) { toast.error(error.message); return; }
+    }
+    const next = customStations.filter((s) => s.id !== id);
+    setCustomStations(next);
+    if (!user) persistLocal(next);
+  };
+
+  const togglePublic = async (s: Station) => {
+    if (!user || s.ownerId !== user.id) return;
+    const nextVal = !s.isPublic;
+    const { error } = await supabase.from("custom_stations").update({ is_public: nextVal }).eq("id", s.id);
+    if (error) { toast.error(error.message); return; }
+    setCustomStations((cs) => cs.map((x) => x.id === s.id ? { ...x, isPublic: nextVal } : x));
+    toast.success(nextVal ? "Station is now public" : "Station is now private");
   };
 
   useEffect(() => {
@@ -273,6 +341,8 @@ function RadioPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((s) => {
           const isActive = activeId === s.id;
+          const isMine = s.network === "Custom" && (!user || s.ownerId === user?.id || !s.ownerId);
+          const ownedByMe = s.network === "Custom" && user && s.ownerId === user.id;
           return (
             <button
               key={s.id}
@@ -284,12 +354,31 @@ function RadioPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{s.genre}</span>
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-primary/80">· {s.network}</span>
+                    {s.network === "Custom" && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/50 px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
+                        {s.isPublic ? <Globe className="h-2.5 w-2.5" /> : <Lock className="h-2.5 w-2.5" />}
+                        {s.isPublic ? "Public" : "Private"}
+                      </span>
+                    )}
                   </div>
                   <div className="mt-1 text-lg font-bold">{s.name}</div>
                   <div className="mt-1 text-sm text-muted-foreground">{s.tagline}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {s.network === "Custom" && (
+                  {ownedByMe && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); togglePublic(s); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); togglePublic(s); } }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground hover:bg-primary hover:text-primary-foreground"
+                      aria-label={s.isPublic ? "Make private" : "Make public"}
+                      title={s.isPublic ? "Make private" : "Make public"}
+                    >
+                      {s.isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                    </span>
+                  )}
+                  {isMine && (
                     <span
                       role="button"
                       tabIndex={0}
@@ -327,7 +416,7 @@ function RadioPage() {
         })}
       </div>
 
-      <p className="text-xs text-muted-foreground">Streams provided by iHeartRadio and SomaFM. Custom stations are stored on this device.</p>
+      <p className="text-xs text-muted-foreground">Streams provided by iHeartRadio and SomaFM. {user ? "Your custom stations sync to your account." : "Sign in to sync custom stations across devices."}</p>
     </div>
 
     <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setFormError(null); }}>
@@ -347,8 +436,17 @@ function RadioPage() {
             <Label htmlFor="station-url">Stream URL</Label>
             <Input id="station-url" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://example.com/stream.mp3 or .m3u8" />
           </div>
+          {user && (
+            <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+              <div>
+                <Label htmlFor="station-public" className="cursor-pointer">Make public</Label>
+                <p className="text-[11px] text-muted-foreground">Other users can discover and play this station.</p>
+              </div>
+              <Switch id="station-public" checked={newPublic} onCheckedChange={setNewPublic} />
+            </div>
+          )}
           <div className="space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Known-working examples</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Suggested stations</p>
             <div className="flex flex-wrap gap-1.5">
               {SUGGESTED_URLS.map((sug) => (
                 <button
