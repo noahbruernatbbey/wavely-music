@@ -25,6 +25,10 @@ function ProfilePage() {
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [trackCount, setTrackCount] = useState(0);
+  const [isPublic, setIsPublic] = useState(false);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -32,15 +36,34 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("display_name, avatar_url, bio").eq("user_id", user.id).maybeSingle()
+    supabase.from("profiles").select("display_name, avatar_url, bio, is_public").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => {
         setDisplayName(data?.display_name ?? "");
         setAvatarPath(data?.avatar_url ?? null);
         setBio((data as { bio?: string | null } | null)?.bio ?? "");
+        setIsPublic(Boolean((data as { is_public?: boolean } | null)?.is_public));
       });
     supabase.from("tracks").select("*", { count: "exact", head: true }).eq("user_id", user.id)
       .then(({ count }) => setTrackCount(count ?? 0));
   }, [user]);
+
+  // Debounced search of public profiles
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) { setResults([]); return; }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url")
+        .eq("is_public", true)
+        .ilike("display_name", `%${q}%`)
+        .limit(20);
+      setResults((data ?? []) as SearchResult[]);
+      setSearching(false);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const save = async () => {
     if (!user) return;
@@ -49,6 +72,14 @@ function ProfilePage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Profile saved");
+  };
+
+  const togglePublicProfile = async (val: boolean) => {
+    if (!user) return;
+    setIsPublic(val);
+    const { error } = await supabase.from("profiles").update({ is_public: val } as never).eq("user_id", user.id);
+    if (error) { setIsPublic(!val); return toast.error(error.message); }
+    toast.success(val ? "Profile is now public" : "Profile is now private");
   };
 
   const onAvatarSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
