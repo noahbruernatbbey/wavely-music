@@ -11,6 +11,28 @@ export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — Wavely" }] }),
 });
 
+const REMEMBER_KEY = "wavely.rememberMe";
+
+function purgeSupabaseLocalSession() {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("sb-") || k.includes("supabase.auth.token"))) keys.push(k);
+    }
+    keys.forEach((k) => localStorage.removeItem(k));
+  } catch { /* ignore */ }
+}
+
+function applyRememberMePolicy() {
+  if (typeof window === "undefined") return;
+  const remember = localStorage.getItem(REMEMBER_KEY) !== "false";
+  if (remember) return;
+  // Session-only mode: purge Supabase tokens from localStorage on tab close
+  const handler = () => purgeSupabaseLocalSession();
+  window.addEventListener("pagehide", handler, { once: true });
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -18,6 +40,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -28,6 +51,7 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
+      localStorage.setItem(REMEMBER_KEY, remember ? "true" : "false");
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
@@ -44,6 +68,7 @@ function AuthPage() {
         if (error) throw error;
         toast.success("Welcome back!");
       }
+      applyRememberMePolicy();
       navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -54,6 +79,8 @@ function AuthPage() {
 
   const oauth = async (provider: "google" | "apple") => {
     setBusy(true);
+    localStorage.setItem(REMEMBER_KEY, remember ? "true" : "false");
+    applyRememberMePolicy();
     const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (result.error) {
       toast.error(`Sign in with ${provider} failed`);
@@ -126,6 +153,15 @@ function AuthPage() {
               placeholder="••••••••"
             />
           </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground select-none cursor-pointer">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-primary"
+            />
+            Remember me on this device
+          </label>
           <button
             type="submit" disabled={busy}
             className="w-full rounded-full bg-primary py-2.5 font-semibold text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-50"
