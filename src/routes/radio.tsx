@@ -153,7 +153,31 @@ function RadioPage() {
     if (!/^https?:\/\//i.test(url)) { setFormError("URL must start with http:// or https://"); return; }
     const isHls = /\.m3u8(\?|$)/i.test(url);
 
-    if (user) {
+    if (editingId) {
+      if (user) {
+        const { data, error } = await supabase
+          .from("custom_stations")
+          .update({ name, url, hls: isHls, is_public: newPublic })
+          .eq("id", editingId)
+          .select("id,user_id,name,url,hls,is_public")
+          .single();
+        if (error || !data) { setFormError(error?.message ?? "Failed to update station"); return; }
+        setCustomStations((cs) => cs.map((s) => s.id === editingId ? {
+          ...s, name: data.name, url: data.url, hls: data.hls, isPublic: data.is_public,
+        } : s));
+      } else {
+        const next = customStations.map((s) => s.id === editingId ? { ...s, name, url, hls: isHls } : s);
+        setCustomStations(next);
+        persistLocal(next);
+      }
+      // If currently playing the edited station, restart with new URL
+      if (activeId === editingId) {
+        audioRef.current?.pause();
+        stopHls();
+        setActiveId(null);
+      }
+      toast.success("Station updated");
+    } else if (user) {
       const { data, error } = await supabase
         .from("custom_stations")
         .insert({ user_id: user.id, name, url, hls: isHls, is_public: newPublic })
@@ -175,6 +199,7 @@ function RadioPage() {
       setCustomStations(next);
       persistLocal(next);
     }
+    setEditingId(null);
     setNewName(""); setNewUrl(""); setNewPublic(false); setFormError(null);
     setDialogOpen(false);
   };
