@@ -444,7 +444,7 @@ function RadioPage() {
           </button>
         ))}
         <button
-          onClick={() => setDialogOpen(true)}
+          onClick={openAddDialog}
           className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/60 px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
         >
           <Plus className="h-3.5 w-3.5" />
