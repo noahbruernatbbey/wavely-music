@@ -618,7 +618,7 @@ function RadioPage() {
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={addCustom}>Add station</Button>
+          <Button onClick={addCustom}>{editingId ? "Save changes" : "Add station"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
