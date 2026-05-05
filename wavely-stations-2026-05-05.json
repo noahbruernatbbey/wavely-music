@@ -1,0 +1,151 @@
+{
+  "type": "wavely.customStations",
+  "version": 1,
+  "exportedAt": "2026-05-05T16:13:19.666Z",
+  "stations": [
+    {
+      "name": "LBC UK",
+      "url": "https://media-ssl.musicradio.com/LBCUK",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Gold",
+      "url": "https://media-ssl.musicradio.com/Gold",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Classic FM",
+      "url": "https://media-ssl.musicradio.com/ClassicFM",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Radio X Chilled",
+      "url": "https://media-ssl.musicradio.com/RadioXChilled",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Radio X 00s",
+      "url": "https://media-ssl.musicradio.com/RadioX00s",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Radio X 90s",
+      "url": "https://media-ssl.musicradio.com/RadioX90s",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Radio X Classic Rock",
+      "url": "https://media-ssl.musicradio.com/RadioXClassicRock",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Radio X UK",
+      "url": "https://media-ssl.musicradio.com/RadioXUK",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "nation radio uk",
+      "url": "https://listen-nation.sharp-stream.com/thamesradio.mp3",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Smooth 80s",
+      "url": "https://media-ssl.musicradio.com/Smooth80s",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Smooth 70s",
+      "url": "https://media-ssl.musicradio.com/Smooth70s",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Smooth Country",
+      "url": "https://media-ssl.musicradio.com/SmoothCountry",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Smooth Chill",
+      "url": "https://media-ssl.musicradio.com/SmoothChill",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Smooth UK",
+      "url": "https://media-ssl.musicradio.com/SmoothUK",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Capital Anthems",
+      "url": "https://media-ssl.musicradio.com/CapitalAnthems",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Capital Chill",
+      "url": "https://media-ssl.musicradio.com/CapitalChill",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Capital Dance",
+      "url": "https://media-ssl.musicradio.com/CapitalDance",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Capital XTRA Reloaded:",
+      "url": "https://media-ssl.musicradio.com/CapitalXTRAReloaded",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Capital UK",
+      "url": "https://media-ssl.musicradio.com/CapitalUK",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Heart Dance",
+      "url": "https://media-ssl.musicradio.com/HeartDance",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Heart 00s",
+      "url": "https://media-ssl.musicradio.com/Heart00s",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Heart 90s",
+      "url": "https://media-ssl.musicradio.com/Heart90s",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Heart 80s",
+      "url": "https://media-ssl.musicradio.com/Heart80s",
+      "hls": false,
+      "isPublic": false
+    },
+    {
+      "name": "Heart 70s",
+      "url": "https://media-ssl.musicradio.com/Heart70s",
+      "hls": false,
+      "isPublic": false
+    }
+  ]
+}
