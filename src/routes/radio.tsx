@@ -409,6 +409,33 @@ function RadioPage() {
           <Plus className="h-3.5 w-3.5" />
           Add station
         </button>
+        <button
+          onClick={exportStations}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          title="Download your custom stations as a JSON file"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export
+        </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          title="Import stations from a JSON file"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Import
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) importStations(f);
+            e.target.value = "";
+          }}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
