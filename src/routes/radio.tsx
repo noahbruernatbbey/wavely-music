@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2, Globe, Lock, Download, Upload, Pencil } from "lucide-react";
@@ -403,6 +403,21 @@ function RadioPage() {
           <p className="text-sm text-muted-foreground">Curated 24/7 streams across genres</p>
         </div>
       </header>
+
+      {!user && (
+        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Lock className="h-4 w-4 text-primary" />
+            <span><span className="font-semibold text-foreground">Sign in to sync</span> your custom stations across all your devices.</span>
+          </div>
+          <Link
+            to="/auth"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Sign in
+          </Link>
+        </div>
+      )}
 
       {active && (
         <div className={`flex flex-col gap-4 rounded-xl border bg-gradient-to-br ${active.color} p-5 sm:flex-row sm:items-center sm:justify-between`}>
