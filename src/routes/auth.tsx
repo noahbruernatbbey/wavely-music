@@ -79,6 +79,8 @@ function AuthPage() {
 
   const oauth = async (provider: "google" | "apple") => {
     setBusy(true);
+    localStorage.setItem(REMEMBER_KEY, remember ? "true" : "false");
+    applyRememberMePolicy();
     const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
     if (result.error) {
       toast.error(`Sign in with ${provider} failed`);
