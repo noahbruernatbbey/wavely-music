@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2, Globe, Lock } from "lucide-react";
+import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2, Globe, Lock, Download, Upload } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "@/context/PlayerContext";
 import { AppShell } from "@/components/AppShell";
@@ -187,6 +187,79 @@ function RadioPage() {
     toast.success(nextVal ? "Station is now public" : "Station is now private");
   };
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const exportStations = () => {
+    const mine = customStations.filter((s) => !user || !s.ownerId || s.ownerId === user.id);
+    if (mine.length === 0) { toast.error("No custom stations to export"); return; }
+    const payload = {
+      type: "wavely.customStations",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      stations: mine.map((s) => ({ name: s.name, url: s.url, hls: !!s.hls, isPublic: !!s.isPublic })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `wavely-stations-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${mine.length} station${mine.length === 1 ? "" : "s"}`);
+  };
+
+  const importStations = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const list = Array.isArray(parsed) ? parsed : parsed?.stations;
+      if (!Array.isArray(list)) throw new Error("Invalid file format");
+      const valid = list
+        .map((r: { name?: unknown; url?: unknown; hls?: unknown; isPublic?: unknown }) => ({
+          name: typeof r?.name === "string" ? r.name.trim() : "",
+          url: typeof r?.url === "string" ? r.url.trim() : "",
+          hls: typeof r?.hls === "boolean" ? r.hls : false,
+          isPublic: typeof r?.isPublic === "boolean" ? r.isPublic : false,
+        }))
+        .filter((r) => r.name && /^https?:\/\//i.test(r.url));
+      if (valid.length === 0) { toast.error("No valid stations found in file"); return; }
+
+      const existingUrls = new Set(customStations.map((s) => s.url));
+      const fresh = valid.filter((r) => !existingUrls.has(r.url));
+      if (fresh.length === 0) { toast.info("All stations already imported"); return; }
+
+      if (user) {
+        const rows = fresh.map((r) => ({
+          user_id: user.id, name: r.name, url: r.url,
+          hls: r.hls || /\.m3u8(\?|$)/i.test(r.url), is_public: r.isPublic,
+        }));
+        const { data, error } = await supabase.from("custom_stations").insert(rows).select("id,user_id,name,url,hls,is_public");
+        if (error || !data) { toast.error(error?.message ?? "Import failed"); return; }
+        setCustomStations([
+          ...data.map((d) => ({
+            id: d.id, name: d.name, tagline: "Your station", genre: "Custom",
+            network: "Custom" as const, url: d.url, hls: d.hls,
+            color: "from-sky-500/30 to-cyan-500/10", ownerId: d.user_id, isPublic: d.is_public,
+          })),
+          ...customStations,
+        ]);
+      } else {
+        const added: Station[] = fresh.map((r, i) => ({
+          id: `custom-${Date.now()}-${i}`, name: r.name, tagline: "Custom station",
+          genre: "Custom", network: "Custom", url: r.url,
+          hls: r.hls || /\.m3u8(\?|$)/i.test(r.url),
+          color: "from-sky-500/30 to-cyan-500/10",
+        }));
+        const next = [...added, ...customStations];
+        setCustomStations(next);
+        persistLocal(next);
+      }
+      toast.success(`Imported ${fresh.length} station${fresh.length === 1 ? "" : "s"}`);
+    } catch (e) {
+      toast.error("Import failed", { description: e instanceof Error ? e.message : "Invalid JSON file" });
+    }
+  };
+
   useEffect(() => {
     const el = new Audio();
     el.preload = "none";
@@ -336,6 +409,33 @@ function RadioPage() {
           <Plus className="h-3.5 w-3.5" />
           Add station
         </button>
+        <button
+          onClick={exportStations}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          title="Download your custom stations as a JSON file"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export
+        </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          title="Import stations from a JSON file"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Import
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) importStations(f);
+            e.target.value = "";
+          }}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
