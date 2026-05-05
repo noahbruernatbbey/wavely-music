@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2, Globe, Lock, Download, Upload } from "lucide-react";
+import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2, Globe, Lock, Download, Upload, Pencil } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "@/context/PlayerContext";
 import { AppShell } from "@/components/AppShell";
@@ -86,10 +86,26 @@ function RadioPage() {
   const [filter, setFilter] = useState<"All" | "iHeartRadio" | "SomaFM" | "Custom">("All");
   const [customStations, setCustomStations] = useState<Station[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [newPublic, setNewPublic] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const openAddDialog = () => {
+    setEditingId(null);
+    setNewName(""); setNewUrl(""); setNewPublic(false); setFormError(null);
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (s: Station) => {
+    setEditingId(s.id);
+    setNewName(s.name);
+    setNewUrl(s.url);
+    setNewPublic(!!s.isPublic);
+    setFormError(null);
+    setDialogOpen(true);
+  };
 
   // Load custom stations: from DB if signed in (own + public), else localStorage
   useEffect(() => {
@@ -137,7 +153,31 @@ function RadioPage() {
     if (!/^https?:\/\//i.test(url)) { setFormError("URL must start with http:// or https://"); return; }
     const isHls = /\.m3u8(\?|$)/i.test(url);
 
-    if (user) {
+    if (editingId) {
+      if (user) {
+        const { data, error } = await supabase
+          .from("custom_stations")
+          .update({ name, url, hls: isHls, is_public: newPublic })
+          .eq("id", editingId)
+          .select("id,user_id,name,url,hls,is_public")
+          .single();
+        if (error || !data) { setFormError(error?.message ?? "Failed to update station"); return; }
+        setCustomStations((cs) => cs.map((s) => s.id === editingId ? {
+          ...s, name: data.name, url: data.url, hls: data.hls, isPublic: data.is_public,
+        } : s));
+      } else {
+        const next = customStations.map((s) => s.id === editingId ? { ...s, name, url, hls: isHls } : s);
+        setCustomStations(next);
+        persistLocal(next);
+      }
+      // If currently playing the edited station, restart with new URL
+      if (activeId === editingId) {
+        audioRef.current?.pause();
+        stopHls();
+        setActiveId(null);
+      }
+      toast.success("Station updated");
+    } else if (user) {
       const { data, error } = await supabase
         .from("custom_stations")
         .insert({ user_id: user.id, name, url, hls: isHls, is_public: newPublic })
@@ -159,6 +199,7 @@ function RadioPage() {
       setCustomStations(next);
       persistLocal(next);
     }
+    setEditingId(null);
     setNewName(""); setNewUrl(""); setNewPublic(false); setFormError(null);
     setDialogOpen(false);
   };
@@ -403,7 +444,7 @@ function RadioPage() {
           </button>
         ))}
         <button
-          onClick={() => setDialogOpen(true)}
+          onClick={openAddDialog}
           className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/60 px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -482,6 +523,19 @@ function RadioPage() {
                     <span
                       role="button"
                       tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); openEditDialog(s); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); openEditDialog(s); } }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground hover:bg-primary hover:text-primary-foreground"
+                      aria-label="Edit station"
+                      title="Edit station"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                  {isMine && (
+                    <span
+                      role="button"
+                      tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); removeCustom(s.id); }}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); removeCustom(s.id); } }}
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
@@ -522,7 +576,7 @@ function RadioPage() {
     <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setFormError(null); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add a custom station</DialogTitle>
+          <DialogTitle>{editingId ? "Edit station" : "Add a custom station"}</DialogTitle>
           <DialogDescription>
             Paste a direct audio stream URL (MP3, AAC, or HLS .m3u8). Some broadcasters geo-restrict or block browsers via CORS — if a stream won't play, try one of the suggestions below.
           </DialogDescription>
@@ -564,7 +618,7 @@ function RadioPage() {
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={addCustom}>Add station</Button>
+          <Button onClick={addCustom}>{editingId ? "Save changes" : "Add station"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
