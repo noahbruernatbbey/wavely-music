@@ -153,6 +153,15 @@ function AuthPage() {
               placeholder="••••••••"
             />
           </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground select-none cursor-pointer">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-primary"
+            />
+            Remember me on this device
+          </label>
           <button
             type="submit" disabled={busy}
             className="w-full rounded-full bg-primary py-2.5 font-semibold text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-50"
