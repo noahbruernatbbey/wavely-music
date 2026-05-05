@@ -82,6 +82,8 @@ LBC UK: https://media-ssl.musicradio.com/LBCUK
 
 nation radio uk https://listen-nation.sharp-stream.com/thamesradio.mp3
 
+you can find the uploadable json file with a updated list of radio station just upload it to the app
+
 
 ---
 
