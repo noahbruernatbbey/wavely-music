@@ -73,13 +73,14 @@ Radio X 00s: https://media-ssl.musicradio.com/RadioX00s
 
 Radio X Chilled: https://media-ssl.musicradio.com/RadioXChilled
 
-## 🎼 Classic & Gold
+## 🎼 Classic gold lbc & nation
 Classic FM: https://media-ssl.musicradio.com/ClassicFM
 
 Gold: https://media-ssl.musicradio.com/Gold
 
 LBC UK: https://media-ssl.musicradio.com/LBCUK
 
+nation radio uk https://listen-nation.sharp-stream.com/thamesradio.mp3
 
 
 ---
