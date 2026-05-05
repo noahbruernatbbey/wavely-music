@@ -576,7 +576,7 @@ function RadioPage() {
     <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setFormError(null); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add a custom station</DialogTitle>
+          <DialogTitle>{editingId ? "Edit station" : "Add a custom station"}</DialogTitle>
           <DialogDescription>
             Paste a direct audio stream URL (MP3, AAC, or HLS .m3u8). Some broadcasters geo-restrict or block browsers via CORS — if a stream won't play, try one of the suggestions below.
           </DialogDescription>
