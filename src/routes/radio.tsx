@@ -86,10 +86,26 @@ function RadioPage() {
   const [filter, setFilter] = useState<"All" | "iHeartRadio" | "SomaFM" | "Custom">("All");
   const [customStations, setCustomStations] = useState<Station[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [newPublic, setNewPublic] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const openAddDialog = () => {
+    setEditingId(null);
+    setNewName(""); setNewUrl(""); setNewPublic(false); setFormError(null);
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (s: Station) => {
+    setEditingId(s.id);
+    setNewName(s.name);
+    setNewUrl(s.url);
+    setNewPublic(!!s.isPublic);
+    setFormError(null);
+    setDialogOpen(true);
+  };
 
   // Load custom stations: from DB if signed in (own + public), else localStorage
   useEffect(() => {
