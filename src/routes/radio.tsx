@@ -523,6 +523,19 @@ function RadioPage() {
                     <span
                       role="button"
                       tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); openEditDialog(s); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); openEditDialog(s); } }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground hover:bg-primary hover:text-primary-foreground"
+                      aria-label="Edit station"
+                      title="Edit station"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                  {isMine && (
+                    <span
+                      role="button"
+                      tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); removeCustom(s.id); }}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); removeCustom(s.id); } }}
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
