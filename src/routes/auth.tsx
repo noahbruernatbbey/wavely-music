@@ -11,6 +11,28 @@ export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — Wavely" }] }),
 });
 
+const REMEMBER_KEY = "wavely.rememberMe";
+
+function purgeSupabaseLocalSession() {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith("sb-") || k.includes("supabase.auth.token"))) keys.push(k);
+    }
+    keys.forEach((k) => localStorage.removeItem(k));
+  } catch { /* ignore */ }
+}
+
+function applyRememberMePolicy() {
+  if (typeof window === "undefined") return;
+  const remember = localStorage.getItem(REMEMBER_KEY) !== "false";
+  if (remember) return;
+  // Session-only mode: purge Supabase tokens from localStorage on tab close
+  const handler = () => purgeSupabaseLocalSession();
+  window.addEventListener("pagehide", handler, { once: true });
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -18,6 +40,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -28,6 +51,7 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
+      localStorage.setItem(REMEMBER_KEY, remember ? "true" : "false");
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
@@ -44,6 +68,7 @@ function AuthPage() {
         if (error) throw error;
         toast.success("Welcome back!");
       }
+      applyRememberMePolicy();
       navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
