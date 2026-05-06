@@ -282,6 +282,49 @@ function RadioPage() {
     }
   };
 
+  const importStationList = async (
+    valid: { name: string; url: string; hls: boolean; isPublic?: boolean }[],
+    source: "file" | "link",
+  ) => {
+    if (valid.length === 0) { toast.error("No valid stations found"); return; }
+    const existingUrls = new Set(customStations.map((s) => s.url));
+    const fresh = valid.filter((r) => !existingUrls.has(r.url));
+    if (fresh.length === 0) { toast.info("All shared stations are already in your list"); return; }
+
+    if (user) {
+      const rows = fresh.map((r) => ({
+        user_id: user.id, name: r.name, url: r.url,
+        hls: r.hls || /\.m3u8(\?|$)/i.test(r.url), is_public: !!r.isPublic,
+      }));
+      const { data, error } = await supabase.from("custom_stations").insert(rows).select("id,user_id,name,url,hls,is_public");
+      if (error || !data) { toast.error(error?.message ?? "Import failed"); return; }
+      setCustomStations([
+        ...data.map((d) => ({
+          id: d.id, name: d.name, tagline: "Your station", genre: "Custom",
+          network: "Custom" as const, url: d.url, hls: d.hls,
+          color: "from-sky-500/30 to-cyan-500/10", ownerId: d.user_id, isPublic: d.is_public,
+        })),
+        ...customStations,
+      ]);
+    } else {
+      const added: Station[] = fresh.map((r, i) => ({
+        id: `custom-${Date.now()}-${i}`, name: r.name, tagline: "Custom station",
+        genre: "Custom", network: "Custom", url: r.url,
+        hls: r.hls || /\.m3u8(\?|$)/i.test(r.url),
+        color: "from-sky-500/30 to-cyan-500/10",
+      }));
+      const next = [...added, ...customStations];
+      setCustomStations(next);
+      persistLocal(next);
+      flagGuestChange();
+    }
+    toast.success(
+      source === "link"
+        ? `Added ${fresh.length} shared station${fresh.length === 1 ? "" : "s"}`
+        : `Imported ${fresh.length} station${fresh.length === 1 ? "" : "s"}`,
+    );
+  };
+
   const importStations = async (file: File) => {
     try {
       const text = await file.text();
@@ -296,44 +339,41 @@ function RadioPage() {
           isPublic: typeof r?.isPublic === "boolean" ? r.isPublic : false,
         }))
         .filter((r) => r.name && /^https?:\/\//i.test(r.url));
-      if (valid.length === 0) { toast.error("No valid stations found in file"); return; }
-
-      const existingUrls = new Set(customStations.map((s) => s.url));
-      const fresh = valid.filter((r) => !existingUrls.has(r.url));
-      if (fresh.length === 0) { toast.info("All stations already imported"); return; }
-
-      if (user) {
-        const rows = fresh.map((r) => ({
-          user_id: user.id, name: r.name, url: r.url,
-          hls: r.hls || /\.m3u8(\?|$)/i.test(r.url), is_public: r.isPublic,
-        }));
-        const { data, error } = await supabase.from("custom_stations").insert(rows).select("id,user_id,name,url,hls,is_public");
-        if (error || !data) { toast.error(error?.message ?? "Import failed"); return; }
-        setCustomStations([
-          ...data.map((d) => ({
-            id: d.id, name: d.name, tagline: "Your station", genre: "Custom",
-            network: "Custom" as const, url: d.url, hls: d.hls,
-            color: "from-sky-500/30 to-cyan-500/10", ownerId: d.user_id, isPublic: d.is_public,
-          })),
-          ...customStations,
-        ]);
-      } else {
-        const added: Station[] = fresh.map((r, i) => ({
-          id: `custom-${Date.now()}-${i}`, name: r.name, tagline: "Custom station",
-          genre: "Custom", network: "Custom", url: r.url,
-          hls: r.hls || /\.m3u8(\?|$)/i.test(r.url),
-          color: "from-sky-500/30 to-cyan-500/10",
-        }));
-        const next = [...added, ...customStations];
-        setCustomStations(next);
-        persistLocal(next);
-        flagGuestChange();
-      }
-      toast.success(`Imported ${fresh.length} station${fresh.length === 1 ? "" : "s"}`);
+      await importStationList(valid, "file");
     } catch (e) {
       toast.error("Import failed", { description: e instanceof Error ? e.message : "Invalid JSON file" });
     }
   };
+
+  // Consume share link from URL hash: #stations=<base64url>
+  const sharedHandledRef = useRef(false);
+  useEffect(() => {
+    if (sharedHandledRef.current) return;
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    const m = hash.match(/stations=([A-Za-z0-9_-]+)/);
+    if (!m) return;
+    sharedHandledRef.current = true;
+    try {
+      const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+      const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+      const json = decodeURIComponent(escape(atob(padded)));
+      const parsed = JSON.parse(json) as { s?: { n?: string; u?: string; h?: boolean }[] };
+      const valid = (parsed.s ?? [])
+        .map((r) => ({
+          name: typeof r?.n === "string" ? r.n.trim() : "",
+          url: typeof r?.u === "string" ? r.u.trim() : "",
+          hls: typeof r?.h === "boolean" ? r.h : false,
+        }))
+        .filter((r) => r.name && /^https?:\/\//i.test(r.url));
+      // Clear the hash so refresh doesn't re-import
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+      void importStationList(valid, "link");
+    } catch {
+      toast.error("Invalid share link");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customStations.length, user]);
 
   useEffect(() => {
     const el = new Audio();
