@@ -253,6 +253,35 @@ function RadioPage() {
     toast.success(`Exported ${mine.length} station${mine.length === 1 ? "" : "s"}`);
   };
 
+  const shareStations = async () => {
+    const mine = customStations.filter((s) => !user || !s.ownerId || s.ownerId === user.id);
+    if (mine.length === 0) { toast.error("No custom stations to share"); return; }
+    const payload = {
+      v: 1,
+      s: mine.map((s) => ({ n: s.name, u: s.url, h: !!s.hls })),
+    };
+    try {
+      const json = JSON.stringify(payload);
+      const b64 = btoa(unescape(encodeURIComponent(json)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      const link = `${window.location.origin}/radio#stations=${b64}`;
+      if (link.length > 6000) {
+        toast.error("Too many stations to share via link", { description: "Use Export to download a file instead." });
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(link);
+        toast.success("Share link copied to clipboard", {
+          description: `Anyone who opens it can import your ${mine.length} station${mine.length === 1 ? "" : "s"}.`,
+        });
+      } catch {
+        window.prompt("Copy this share link:", link);
+      }
+    } catch {
+      toast.error("Failed to create share link");
+    }
+  };
+
   const importStations = async (file: File) => {
     try {
       const text = await file.text();
