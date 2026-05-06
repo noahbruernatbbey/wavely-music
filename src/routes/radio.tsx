@@ -770,6 +770,62 @@ function RadioPage() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <Dialog
+      open={importProgress.open}
+      onOpenChange={(o) => {
+        if (!o && !importProgress.finished) return;
+        setImportProgress((p) => ({ ...p, open: o }));
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {importProgress.finished
+              ? (importProgress.error ? "Import failed" : "Import complete")
+              : (importProgress.source === "link" ? "Adding shared stations…" : "Importing stations…")}
+          </DialogTitle>
+          <DialogDescription>
+            {importProgress.error
+              ? importProgress.error
+              : `${importProgress.done} of ${importProgress.total} processed`}
+          </DialogDescription>
+        </DialogHeader>
+        {!importProgress.error && (
+          <div className="space-y-4">
+            <Progress value={importProgress.total === 0 ? 0 : (importProgress.done / importProgress.total) * 100} />
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-md border border-border p-2">
+                <div className="font-semibold text-foreground">Added ({importProgress.added.length})</div>
+                <div className="mt-1 max-h-32 overflow-y-auto text-muted-foreground">
+                  {importProgress.added.length === 0
+                    ? <span className="italic">None yet</span>
+                    : importProgress.added.map((n, i) => <div key={i} className="truncate">• {n}</div>)}
+                </div>
+              </div>
+              <div className="rounded-md border border-border p-2">
+                <div className="font-semibold text-foreground">Skipped ({importProgress.skipped.length})</div>
+                <div className="mt-1 max-h-32 overflow-y-auto text-muted-foreground">
+                  {importProgress.skipped.length === 0
+                    ? <span className="italic">None</span>
+                    : importProgress.skipped.map((s, i) => (
+                        <div key={i} className="truncate" title={`${s.url} — ${s.reason}`}>
+                          • {s.name} <span className="text-[10px] uppercase opacity-70">({s.reason})</span>
+                        </div>
+                      ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button disabled={!importProgress.finished}>
+              {importProgress.finished ? "Close" : "Working…"}
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </AppShell>
   );
 }
