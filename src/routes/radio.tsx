@@ -410,10 +410,17 @@ function RadioPage() {
       </header>
 
       {!user && (
-        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className={`flex flex-col gap-2 rounded-lg border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between ${guestEdited ? "border-primary bg-primary/10 shadow-sm" : "border-dashed border-primary/40 bg-primary/5"}`}>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Lock className="h-4 w-4 text-primary" />
-            <span><span className="font-semibold text-foreground">Sign in to sync</span> your custom stations across all your devices.</span>
+            <span>
+              <span className="font-semibold text-foreground">
+                {guestEdited ? "Sign in to save your changes" : "Sign in to sync"}
+              </span>{" "}
+              {guestEdited
+                ? "— your station changes are only on this device. Sign in to back them up and sync across devices."
+                : "your custom stations across all your devices."}
+            </span>
           </div>
           <Link
             to="/auth"
