@@ -220,7 +220,7 @@ function RadioPage() {
     }
     const next = customStations.filter((s) => s.id !== id);
     setCustomStations(next);
-    if (!user) persistLocal(next);
+    if (!user) { persistLocal(next); flagGuestChange(); }
   };
 
   const togglePublic = async (s: Station) => {
