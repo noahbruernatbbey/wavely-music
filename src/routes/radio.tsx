@@ -200,6 +200,7 @@ function RadioPage() {
       const next = [station, ...customStations];
       setCustomStations(next);
       persistLocal(next);
+      flagGuestChange();
     }
     setEditingId(null);
     setNewName(""); setNewUrl(""); setNewPublic(false); setFormError(null);
