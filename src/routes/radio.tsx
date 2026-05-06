@@ -91,6 +91,8 @@ function RadioPage() {
   const [newUrl, setNewUrl] = useState("");
   const [newPublic, setNewPublic] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [guestEdited, setGuestEdited] = useState(false);
+  const flagGuestChange = () => { if (!user) setGuestEdited(true); };
 
   const openAddDialog = () => {
     setEditingId(null);
