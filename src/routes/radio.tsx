@@ -171,6 +171,7 @@ function RadioPage() {
         const next = customStations.map((s) => s.id === editingId ? { ...s, name, url, hls: isHls } : s);
         setCustomStations(next);
         persistLocal(next);
+        flagGuestChange();
       }
       // If currently playing the edited station, restart with new URL
       if (activeId === editingId) {
