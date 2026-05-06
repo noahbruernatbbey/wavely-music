@@ -5,7 +5,8 @@ import { Radio as RadioIcon, Play, Pause, Loader2, Volume2, Plus, Trash2, Globe,
 import { Slider } from "@/components/ui/slider";
 import { usePlayer } from "@/context/PlayerContext";
 import { AppShell } from "@/components/AppShell";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -282,47 +283,90 @@ function RadioPage() {
     }
   };
 
+  type ImportProgress = {
+    open: boolean;
+    source: "file" | "link";
+    total: number;
+    done: number;
+    added: string[];
+    skipped: { name: string; url: string; reason: "duplicate" | "error" }[];
+    finished: boolean;
+    error?: string;
+  };
+  const [importProgress, setImportProgress] = useState<ImportProgress>({
+    open: false, source: "file", total: 0, done: 0, added: [], skipped: [], finished: false,
+  });
+
   const importStationList = async (
     valid: { name: string; url: string; hls: boolean; isPublic?: boolean }[],
     source: "file" | "link",
   ) => {
-    if (valid.length === 0) { toast.error("No valid stations found"); return; }
-    const existingUrls = new Set(customStations.map((s) => s.url));
-    const fresh = valid.filter((r) => !existingUrls.has(r.url));
-    if (fresh.length === 0) { toast.info("All shared stations are already in your list"); return; }
-
-    if (user) {
-      const rows = fresh.map((r) => ({
-        user_id: user.id, name: r.name, url: r.url,
-        hls: r.hls || /\.m3u8(\?|$)/i.test(r.url), is_public: !!r.isPublic,
-      }));
-      const { data, error } = await supabase.from("custom_stations").insert(rows).select("id,user_id,name,url,hls,is_public");
-      if (error || !data) { toast.error(error?.message ?? "Import failed"); return; }
-      setCustomStations([
-        ...data.map((d) => ({
-          id: d.id, name: d.name, tagline: "Your station", genre: "Custom",
-          network: "Custom" as const, url: d.url, hls: d.hls,
-          color: "from-sky-500/30 to-cyan-500/10", ownerId: d.user_id, isPublic: d.is_public,
-        })),
-        ...customStations,
-      ]);
-    } else {
-      const added: Station[] = fresh.map((r, i) => ({
-        id: `custom-${Date.now()}-${i}`, name: r.name, tagline: "Custom station",
-        genre: "Custom", network: "Custom", url: r.url,
-        hls: r.hls || /\.m3u8(\?|$)/i.test(r.url),
-        color: "from-sky-500/30 to-cyan-500/10",
-      }));
-      const next = [...added, ...customStations];
-      setCustomStations(next);
-      persistLocal(next);
-      flagGuestChange();
+    if (valid.length === 0) {
+      setImportProgress({ open: true, source, total: 0, done: 0, added: [], skipped: [], finished: true, error: "No valid stations found." });
+      return;
     }
-    toast.success(
-      source === "link"
-        ? `Added ${fresh.length} shared station${fresh.length === 1 ? "" : "s"}`
-        : `Imported ${fresh.length} station${fresh.length === 1 ? "" : "s"}`,
-    );
+    const existingUrls = new Set(customStations.map((s) => s.url));
+    const fresh: typeof valid = [];
+    const skipped: ImportProgress["skipped"] = [];
+    for (const r of valid) {
+      if (existingUrls.has(r.url)) skipped.push({ name: r.name, url: r.url, reason: "duplicate" });
+      else { fresh.push(r); existingUrls.add(r.url); }
+    }
+
+    setImportProgress({ open: true, source, total: valid.length, done: skipped.length, added: [], skipped, finished: false });
+
+    const added: string[] = [];
+    const newStations: Station[] = [];
+
+    for (let i = 0; i < fresh.length; i++) {
+      const r = fresh[i];
+      const isHls = r.hls || /\.m3u8(\?|$)/i.test(r.url);
+      try {
+        if (user) {
+          const { data, error } = await supabase
+            .from("custom_stations")
+            .insert({ user_id: user.id, name: r.name, url: r.url, hls: isHls, is_public: !!r.isPublic })
+            .select("id,user_id,name,url,hls,is_public")
+            .single();
+          if (error || !data) throw new Error(error?.message ?? "Insert failed");
+          newStations.push({
+            id: data.id, name: data.name, tagline: "Your station", genre: "Custom",
+            network: "Custom", url: data.url, hls: data.hls,
+            color: "from-sky-500/30 to-cyan-500/10", ownerId: data.user_id, isPublic: data.is_public,
+          });
+        } else {
+          newStations.push({
+            id: `custom-${Date.now()}-${i}`, name: r.name, tagline: "Custom station",
+            genre: "Custom", network: "Custom", url: r.url, hls: isHls,
+            color: "from-sky-500/30 to-cyan-500/10",
+          });
+        }
+        added.push(r.name);
+      } catch (e) {
+        skipped.push({ name: r.name, url: r.url, reason: "error" });
+        console.error("Import station failed:", e);
+      }
+      setImportProgress((p) => ({ ...p, done: skipped.length + added.length, added: [...added], skipped: [...skipped] }));
+    }
+
+    if (newStations.length > 0) {
+      const next = [...newStations, ...customStations];
+      setCustomStations(next);
+      if (!user) { persistLocal(next); flagGuestChange(); }
+    }
+
+    setImportProgress((p) => ({ ...p, finished: true }));
+
+    if (added.length > 0) {
+      toast.success(
+        source === "link"
+          ? `Added ${added.length} shared station${added.length === 1 ? "" : "s"}`
+          : `Imported ${added.length} station${added.length === 1 ? "" : "s"}`,
+        skipped.length > 0 ? { description: `${skipped.length} skipped (duplicates or errors).` } : undefined,
+      );
+    } else if (skipped.length > 0 && skipped.every((s) => s.reason === "duplicate")) {
+      toast.info("All shared stations are already in your list");
+    }
   };
 
   const importStations = async (file: File) => {
@@ -723,6 +767,62 @@ function RadioPage() {
         <DialogFooter>
           <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
           <Button onClick={addCustom}>{editingId ? "Save changes" : "Add station"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <Dialog
+      open={importProgress.open}
+      onOpenChange={(o) => {
+        if (!o && !importProgress.finished) return;
+        setImportProgress((p) => ({ ...p, open: o }));
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {importProgress.finished
+              ? (importProgress.error ? "Import failed" : "Import complete")
+              : (importProgress.source === "link" ? "Adding shared stations…" : "Importing stations…")}
+          </DialogTitle>
+          <DialogDescription>
+            {importProgress.error
+              ? importProgress.error
+              : `${importProgress.done} of ${importProgress.total} processed`}
+          </DialogDescription>
+        </DialogHeader>
+        {!importProgress.error && (
+          <div className="space-y-4">
+            <Progress value={importProgress.total === 0 ? 0 : (importProgress.done / importProgress.total) * 100} />
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-md border border-border p-2">
+                <div className="font-semibold text-foreground">Added ({importProgress.added.length})</div>
+                <div className="mt-1 max-h-32 overflow-y-auto text-muted-foreground">
+                  {importProgress.added.length === 0
+                    ? <span className="italic">None yet</span>
+                    : importProgress.added.map((n, i) => <div key={i} className="truncate">• {n}</div>)}
+                </div>
+              </div>
+              <div className="rounded-md border border-border p-2">
+                <div className="font-semibold text-foreground">Skipped ({importProgress.skipped.length})</div>
+                <div className="mt-1 max-h-32 overflow-y-auto text-muted-foreground">
+                  {importProgress.skipped.length === 0
+                    ? <span className="italic">None</span>
+                    : importProgress.skipped.map((s, i) => (
+                        <div key={i} className="truncate" title={`${s.url} — ${s.reason}`}>
+                          • {s.name} <span className="text-[10px] uppercase opacity-70">({s.reason})</span>
+                        </div>
+                      ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button disabled={!importProgress.finished}>
+              {importProgress.finished ? "Close" : "Working…"}
+            </Button>
+          </DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
