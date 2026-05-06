@@ -298,6 +298,7 @@ function RadioPage() {
         const next = [...added, ...customStations];
         setCustomStations(next);
         persistLocal(next);
+        flagGuestChange();
       }
       toast.success(`Imported ${fresh.length} station${fresh.length === 1 ? "" : "s"}`);
     } catch (e) {
