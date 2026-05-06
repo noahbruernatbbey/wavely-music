@@ -555,6 +555,14 @@ function RadioPage() {
           Export
         </button>
         <button
+          onClick={shareStations}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          title="Copy a share link of your custom stations"
+        >
+          <Share2 className="h-3.5 w-3.5" />
+          Share link
+        </button>
+        <button
           onClick={() => fileInputRef.current?.click()}
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
           title="Import stations from a JSON file"
